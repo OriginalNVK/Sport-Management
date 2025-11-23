@@ -26,13 +26,13 @@ export function Sidebar({ currentPage, onPageChange }: SidebarProps) {
   ];
 
   return (
-    <aside className="w-64 bg-gray-100 border-r border-gray-200 flex flex-col">
+    <aside className="w-80 bg-black border-r border-gray-200 flex flex-col">
       <div className="p-6 border-b border-gray-200">
         <h1 className="flex items-center gap-2">
           <div className="w-10 h-10 bg-blue-600 rounded-lg flex items-center justify-center">
             <Building2 className="w-6 h-6 text-white" />
           </div>
-          <span className="text-gray-800">SportHub Pro</span>
+          <span className="text-white">Sport Hub</span>
         </h1>
       </div>
 
@@ -48,8 +48,8 @@ export function Sidebar({ currentPage, onPageChange }: SidebarProps) {
                   onClick={() => onPageChange(item.id)}
                   className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg transition-all ${
                     isActive
-                      ? 'bg-blue-50 text-blue-600'
-                      : 'text-gray-600 hover:bg-gray-50'
+                      ? 'bg-gray-800 text-blue-500'
+                      : 'text-gray-300 hover:bg-gray-500'
                   }`}
                 >
                   <Icon className="w-5 h-5" />
