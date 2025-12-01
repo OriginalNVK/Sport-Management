@@ -13,10 +13,10 @@ The **Sport Management System** is designed to manage sports complexes efficient
 | Name               | Student ID |
 | ------------------ | ---------- |
 | Nguyễn Văn Khánh   | 22120158   |
-| Phạm Ngọc Bảo Uyên | 22120      |
-| Lê Quang Vinh      | 22120      |
-| Lê Nguyễn Huyền Vy | 22120      |
-| Nguyễn Cường       | 23120      |
+| Phạm Ngọc Bảo Uyên | 22120424   |
+| Lê Quang Vinh      | 22120433   |
+| Lê Nguyễn Huyền Vy | 22120449   |
+| Nguyễn Tuấn Cường       | 23120224   |
 
 </div>
 
