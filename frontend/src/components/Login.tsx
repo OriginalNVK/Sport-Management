@@ -1,0 +1,133 @@
+import { useState } from 'react';
+import { Mail, Lock, LogIn, Building2 } from 'lucide-react';
+import { Card, CardContent, CardHeader, CardTitle } from './ui/card';
+import { Input } from './ui/input';
+import { Button } from './ui/button';
+import { Label } from './ui/label';
+
+interface LoginProps {
+  onLogin: (email: string, role: 'customer' | 'manager') => void;
+}
+
+export function Login({ onLogin }: LoginProps) {
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [error, setError] = useState('');
+  const [isLoading, setIsLoading] = useState(false);
+
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    setError('');
+    setIsLoading(true);
+
+    // Demo accounts
+    const accounts = [
+      { email: 'customer@example.com', password: '12345678', role: 'customer' as const },
+      { email: 'manage@example.com', password: '12345678', role: 'manager' as const },
+    ];
+
+    // Find matching account
+    const account = accounts.find(
+      (acc) => acc.email === email && acc.password === password
+    );
+
+    setTimeout(() => {
+      if (account) {
+        onLogin(account.email, account.role);
+      } else {
+        setError('Invalid email or password');
+      }
+      setIsLoading(false);
+    }, 500);
+  };
+
+  return (
+    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 flex items-center justify-center p-4">
+      <Card className="w-full max-w-md shadow-xl">
+        <CardHeader className="space-y-4 text-center pb-8">
+          <div className="flex justify-center">
+            <div className="w-16 h-16 bg-blue-600 rounded-lg flex items-center justify-center">
+              <Building2 className="w-10 h-10 text-white" />
+            </div>
+          </div>
+          <CardTitle className="text-3xl font-bold text-gray-800">Sport Hub</CardTitle>
+          <p className="text-gray-600">Sign in to your account</p>
+        </CardHeader>
+        <CardContent>
+          <form onSubmit={handleSubmit} className="space-y-6">
+            {error && (
+              <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg text-sm">
+                {error}
+              </div>
+            )}
+
+            <div className="space-y-2">
+              <Label htmlFor="email" className="text-gray-700">Email Address</Label>
+              <div className="relative">
+                <Mail className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400" />
+                <Input
+                  id="email"
+                  type="email"
+                  placeholder="Enter your email"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  className="pl-10"
+                  required
+                />
+              </div>
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="password" className="text-gray-700">Password</Label>
+              <div className="relative">
+                <Lock className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400" />
+                <Input
+                  id="password"
+                  type="password"
+                  placeholder="Enter your password"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  className="pl-10"
+                  required
+                />
+              </div>
+            </div>
+
+            <Button
+              type="submit"
+              className="w-full bg-blue-600 hover:bg-blue-700 text-white py-6 text-lg"
+              disabled={isLoading}
+            >
+              {isLoading ? (
+                'Signing in...'
+              ) : (
+                <>
+                  <LogIn className="w-5 h-5 mr-2" />
+                  Sign In
+                </>
+              )}
+            </Button>
+          </form>
+
+          <div className="mt-8 pt-6 border-t border-gray-200">
+            <p className="text-sm text-gray-600 mb-3 font-semibold">Demo Accounts:</p>
+            <div className="space-y-2 text-sm">
+              <div className="bg-blue-50 px-3 py-2 rounded border border-blue-200">
+                <p className="text-gray-700">
+                  <span className="font-semibold">Customer:</span> customer@example.com
+                </p>
+                <p className="text-gray-600 text-xs">Password: 12345678</p>
+              </div>
+              <div className="bg-green-50 px-3 py-2 rounded border border-green-200">
+                <p className="text-gray-700">
+                  <span className="font-semibold">Manager:</span> manage@example.com
+                </p>
+                <p className="text-gray-600 text-xs">Password: 12345678</p>
+              </div>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+    </div>
+  );
+}

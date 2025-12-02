@@ -1,11 +1,215 @@
-import { Mail, Phone, MapPin, Building2, Calendar, Edit, Save } from 'lucide-react';
+import { useState } from 'react';
+import { Mail, Phone, MapPin, Building2, Calendar, Edit, Save, User as UserIcon, Edit2, X } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from './ui/card';
 import { Button } from './ui/button';
 import { Input } from './ui/input';
 import { Label } from './ui/label';
 import { Textarea } from './ui/textarea';
+import type { UserRole } from '../App';
 
-export function Profile() {
+interface ProfileProps {
+  userEmail: string;
+  userRole: UserRole;
+}
+
+export function Profile({ userEmail, userRole }: ProfileProps) {
+  const [isEditing, setIsEditing] = useState(false);
+  const [formData, setFormData] = useState({
+    name: userRole === 'customer' ? 'John Doe' : 'Admin User',
+    email: userEmail,
+    phone: userRole === 'customer' ? '+1 (555) 123-4567' : '+1 234 567 8900',
+    address: userRole === 'customer' ? '123 Main Street, New York, NY 10001' : '123 Sports Avenue, New York, NY 10001',
+    memberSince: '2024-01-15',
+    favoriteSport: userRole === 'customer' ? 'Football' : 'N/A',
+    department: userRole === 'manager' ? 'Management' : 'N/A',
+    bio: userRole === 'manager' 
+      ? 'Experienced sports facility manager with over 10 years of experience in managing sports complexes and stadiums.'
+      : 'Sports enthusiast and regular customer.',
+  });
+
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+    const { name, value } = e.target;
+    setFormData((prev) => ({ ...prev, [name]: value }));
+  };
+
+  const handleSave = () => {
+    setIsEditing(false);
+    alert('Profile updated successfully!');
+  };
+
+  const handleCancel = () => {
+    setIsEditing(false);
+  };
+
+  // Customer Profile View
+  if (userRole === 'customer') {
+    return (
+      <div className="p-8">
+        <div className="flex items-center justify-between mb-8">
+          <h1 className="text-gray-800">My Profile</h1>
+          {!isEditing ? (
+            <button
+              onClick={() => setIsEditing(true)}
+              className="flex items-center gap-2 px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+            >
+              <Edit2 className="w-4 h-4" />
+              Edit Profile
+            </button>
+          ) : (
+            <div className="flex gap-2">
+              <button
+                onClick={handleSave}
+                className="flex items-center gap-2 px-6 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors"
+              >
+                <Save className="w-4 h-4" />
+                Save
+              </button>
+              <button
+                onClick={handleCancel}
+                className="flex items-center gap-2 px-6 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-700 transition-colors"
+              >
+                <X className="w-4 h-4" />
+                Cancel
+              </button>
+            </div>
+          )}
+        </div>
+
+        <div className="max-w-3xl">
+          {/* Profile Avatar */}
+          <div className="flex items-center gap-6 mb-8 p-6 bg-gray-50 rounded-lg">
+            <div className="w-24 h-24 bg-blue-600 rounded-full flex items-center justify-center">
+              <UserIcon className="w-12 h-12 text-white" />
+            </div>
+            <div>
+              <h2 className="text-gray-900">{formData.name}</h2>
+              <p className="text-gray-600">Member since {formData.memberSince}</p>
+            </div>
+          </div>
+
+          {/* Profile Information */}
+          <div className="border border-gray-200 rounded-lg p-6 bg-white">
+            <h3 className="mb-6 text-gray-800">Personal Information</h3>
+
+            <div className="space-y-6">
+              {/* Name */}
+              <div>
+                <label className="flex items-center gap-2 text-gray-600 mb-2">
+                  <UserIcon className="w-4 h-4" />
+                  Full Name
+                </label>
+                {isEditing ? (
+                  <input
+                    type="text"
+                    name="name"
+                    value={formData.name}
+                    onChange={handleInputChange}
+                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  />
+                ) : (
+                  <p className="text-gray-900">{formData.name}</p>
+                )}
+              </div>
+
+              {/* Email */}
+              <div>
+                <label className="flex items-center gap-2 text-gray-600 mb-2">
+                  <Mail className="w-4 h-4" />
+                  Email Address
+                </label>
+                {isEditing ? (
+                  <input
+                    type="email"
+                    name="email"
+                    value={formData.email}
+                    onChange={handleInputChange}
+                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  />
+                ) : (
+                  <p className="text-gray-900">{formData.email}</p>
+                )}
+              </div>
+
+              {/* Phone */}
+              <div>
+                <label className="flex items-center gap-2 text-gray-600 mb-2">
+                  <Phone className="w-4 h-4" />
+                  Phone Number
+                </label>
+                {isEditing ? (
+                  <input
+                    type="tel"
+                    name="phone"
+                    value={formData.phone}
+                    onChange={handleInputChange}
+                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  />
+                ) : (
+                  <p className="text-gray-900">{formData.phone}</p>
+                )}
+              </div>
+
+              {/* Address */}
+              <div>
+                <label className="flex items-center gap-2 text-gray-600 mb-2">
+                  <MapPin className="w-4 h-4" />
+                  Address
+                </label>
+                {isEditing ? (
+                  <input
+                    type="text"
+                    name="address"
+                    value={formData.address}
+                    onChange={handleInputChange}
+                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  />
+                ) : (
+                  <p className="text-gray-900">{formData.address}</p>
+                )}
+              </div>
+
+              {/* Favorite Sport */}
+              <div>
+                <label className="flex items-center gap-2 text-gray-600 mb-2">
+                  <Calendar className="w-4 h-4" />
+                  Favorite Sport
+                </label>
+                {isEditing ? (
+                  <input
+                    type="text"
+                    name="favoriteSport"
+                    value={formData.favoriteSport}
+                    onChange={handleInputChange}
+                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  />
+                ) : (
+                  <p className="text-gray-900">{formData.favoriteSport}</p>
+                )}
+              </div>
+            </div>
+          </div>
+
+          {/* Activity Summary */}
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mt-8">
+            <div className="border border-gray-200 rounded-lg p-6 bg-white text-center">
+              <p className="text-gray-600 mb-2">Total Bookings</p>
+              <p className="text-3xl text-gray-900">24</p>
+            </div>
+            <div className="border border-gray-200 rounded-lg p-6 bg-white text-center">
+              <p className="text-gray-600 mb-2">Active Sessions</p>
+              <p className="text-3xl text-gray-900">3</p>
+            </div>
+            <div className="border border-gray-200 rounded-lg p-6 bg-white text-center">
+              <p className="text-gray-600 mb-2">Services Used</p>
+              <p className="text-3xl text-gray-900">8</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // Manager Profile View
   return (
     <div className="p-8">
       <div className="mb-8">

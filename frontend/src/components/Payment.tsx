@@ -2,6 +2,7 @@ import { CreditCard, DollarSign, TrendingUp, CheckCircle, Clock, XCircle } from 
 import { Card, CardContent, CardHeader, CardTitle } from './ui/card';
 import { Badge } from './ui/badge';
 import { Button } from './ui/button';
+import type { UserRole } from '../App';
 
 const transactions = [
   {
@@ -60,7 +61,11 @@ const transactions = [
   },
 ];
 
-export function Payment() {
+interface PaymentProps {
+  userRole: UserRole;
+}
+
+export function Payment({ userRole }: PaymentProps) {
   const getStatusBadge = (status: string) => {
     switch (status) {
       case 'Completed':
@@ -87,6 +92,163 @@ export function Payment() {
     }
   };
 
+  // Customer View - Customer Payment History
+  if (userRole === 'customer') {
+    const paymentHistory = [
+      {
+        id: 1,
+        invoice: 'INV-001',
+        description: 'Football Field A - 2 hours',
+        date: '2025-11-20',
+        amount: 100,
+        status: 'paid',
+      },
+      {
+        id: 2,
+        invoice: 'INV-002',
+        description: 'Volleyball Court B - 2 hours',
+        date: '2025-11-25',
+        amount: 70,
+        status: 'paid',
+      },
+      {
+        id: 3,
+        invoice: 'INV-003',
+        description: 'Basketball Court C - 3 hours',
+        date: '2025-11-28',
+        amount: 120,
+        status: 'paid',
+      },
+      {
+        id: 4,
+        invoice: 'INV-004',
+        description: 'Tennis Court E - 2 hours',
+        date: '2025-11-30',
+        amount: 60,
+        status: 'paid',
+      },
+    ];
+
+    const pendingPayments = [
+      {
+        id: 1,
+        invoice: 'INV-005',
+        description: 'Football Field D - 2 hours',
+        date: '2025-12-05',
+        dueDate: '2025-12-10',
+        amount: 110,
+        status: 'pending',
+      },
+      {
+        id: 2,
+        invoice: 'INV-006',
+        description: 'Volleyball Court B - 1 hour',
+        date: '2025-12-08',
+        dueDate: '2025-12-15',
+        amount: 35,
+        status: 'pending',
+      },
+    ];
+
+    return (
+      <div className="p-8">
+        <h1 className="mb-8 text-gray-800">Payment & Invoices</h1>
+
+        {/* Pending Payments Section */}
+        <section className="mb-12">
+          <div className="flex items-center gap-2 mb-4">
+            <Clock className="w-6 h-6 text-yellow-600" />
+            <h2 className="text-gray-700">Pending Payments</h2>
+          </div>
+          <div className="space-y-4">
+            {pendingPayments.map((payment) => (
+              <div
+                key={payment.id}
+                className="border border-yellow-200 bg-yellow-50 rounded-lg p-6"
+              >
+                <div className="flex items-start justify-between">
+                  <div className="flex-1">
+                    <div className="flex items-center gap-3 mb-2">
+                      <span className="px-3 py-1 bg-yellow-200 text-yellow-800 rounded">
+                        {payment.invoice}
+                      </span>
+                      <span className="text-red-600">Due: {payment.dueDate}</span>
+                    </div>
+                    <h3 className="mb-2 text-gray-900">{payment.description}</h3>
+                    <p className="text-gray-600">Booking Date: {payment.date}</p>
+                  </div>
+                  <div className="text-right">
+                    <p className="text-3xl mb-4 text-gray-900">${payment.amount}</p>
+                    <button className="px-6 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors">
+                      Pay Now
+                    </button>
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+        </section>
+
+        {/* Payment History Section */}
+        <section>
+          <div className="flex items-center gap-2 mb-4">
+            <CheckCircle className="w-6 h-6 text-green-600" />
+            <h2 className="text-gray-700">Payment History</h2>
+          </div>
+          <div className="border border-gray-200 rounded-lg overflow-hidden">
+            <table className="w-full">
+              <thead className="bg-gray-50">
+                <tr>
+                  <th className="px-6 py-3 text-left text-gray-700">Invoice</th>
+                  <th className="px-6 py-3 text-left text-gray-700">Description</th>
+                  <th className="px-6 py-3 text-left text-gray-700">Date</th>
+                  <th className="px-6 py-3 text-left text-gray-700">Amount</th>
+                  <th className="px-6 py-3 text-left text-gray-700">Status</th>
+                </tr>
+              </thead>
+              <tbody className="bg-white divide-y divide-gray-200">
+                {paymentHistory.map((payment) => (
+                  <tr key={payment.id} className="hover:bg-gray-50">
+                    <td className="px-6 py-4 text-gray-900">{payment.invoice}</td>
+                    <td className="px-6 py-4 text-gray-900">{payment.description}</td>
+                    <td className="px-6 py-4 text-gray-900">{payment.date}</td>
+                    <td className="px-6 py-4 text-gray-900">${payment.amount}</td>
+                    <td className="px-6 py-4">
+                      <span className="inline-flex items-center gap-1 px-3 py-1 bg-green-100 text-green-800 rounded-full">
+                        <CheckCircle className="w-4 h-4" />
+                        Paid
+                      </span>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+          <div className="mt-6 p-6 bg-gray-50 rounded-lg">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <CreditCard className="w-8 h-8 text-gray-600" />
+                <div>
+                  <p className="text-gray-600">Total Paid</p>
+                  <p className="text-2xl text-gray-900">
+                    ${paymentHistory.reduce((sum, p) => sum + p.amount, 0)}
+                  </p>
+                </div>
+              </div>
+              <div className="text-right">
+                <p className="text-gray-600">Outstanding Balance</p>
+                <p className="text-2xl text-red-600">
+                  ${pendingPayments.reduce((sum, p) => sum + p.amount, 0)}
+                </p>
+              </div>
+            </div>
+          </div>
+        </section>
+      </div>
+    );
+  }
+
+  // Manager View - Payment Management
   return (
     <div className="p-8">
       <div className="mb-8">

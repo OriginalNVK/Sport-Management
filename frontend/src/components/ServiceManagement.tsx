@@ -1,39 +1,86 @@
 import { useState } from 'react';
-import { Wrench, Plus, Edit, Trash2 } from 'lucide-react';
+import { Wrench, Plus, Edit, Trash2, Dumbbell, Users, Shirt, Camera, Coffee, Droplets } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from './ui/card';
 import { Button } from './ui/button';
 import { Badge } from './ui/badge';
+import type { UserRole } from '../App';
+import type { PageType } from '../App';
 
 const services = [
   {
     id: 1,
-    name: 'Equipment Rental',
-    description: 'Rent sports equipment including balls, nets, and protective gear',
-    category: 'Rental',
-    price: 25,
-    available: true,
-    bookings: 156,
-  },
-  {
-    id: 2,
-    name: 'Personal Trainer',
+    name: 'Personal Training',
+    icon: Dumbbell,
     description: 'One-on-one training sessions with certified trainers',
     category: 'Training',
-    price: 80,
+    price: 45,
+    duration: '1 hour',
     available: true,
+    availability: 'Available',
     bookings: 89,
   },
   {
-    id: 3,
-    name: 'Photography Service',
-    description: 'Professional sports photography for events and games',
-    category: 'Media',
-    price: 150,
+    id: 2,
+    name: 'Group Classes',
+    icon: Users,
+    description: 'Join group fitness classes including yoga, aerobics, and more',
+    category: 'Training',
+    price: 20,
+    duration: '1 hour',
     available: true,
-    bookings: 45,
+    availability: 'Available',
+    bookings: 156,
+  },
+  {
+    id: 3,
+    name: 'Equipment Rental',
+    icon: Shirt,
+    description: 'Rent sports equipment and uniforms for your games',
+    category: 'Rental',
+    price: 15,
+    duration: 'Per session',
+    available: true,
+    availability: 'Available',
+    bookings: 234,
   },
   {
     id: 4,
+    name: 'Photography Service',
+    icon: Camera,
+    description: 'Professional photography for your sporting events',
+    category: 'Media',
+    price: 100,
+    duration: '2 hours',
+    available: true,
+    availability: 'Limited',
+    bookings: 45,
+  },
+  {
+    id: 5,
+    name: 'Cafeteria & Refreshments',
+    icon: Coffee,
+    description: 'Food and beverages available at our on-site cafeteria',
+    category: 'Food & Beverage',
+    price: 10,
+    duration: 'Per order',
+    available: true,
+    availability: 'Available',
+    bookings: 287,
+  },
+  {
+    id: 6,
+    name: 'Locker & Shower Access',
+    icon: Droplets,
+    description: 'Access to premium locker rooms and shower facilities',
+    category: 'Maintenance',
+    price: 8,
+    duration: 'Per session',
+    available: true,
+    availability: 'Available',
+    bookings: 412,
+  },
+  {
+    id: 7,
     name: 'Catering Service',
     description: 'Food and beverage catering for events',
     category: 'Food & Beverage',
@@ -42,7 +89,7 @@ const services = [
     bookings: 67,
   },
   {
-    id: 5,
+    id: 8,
     name: 'First Aid Team',
     description: 'On-site medical support and first aid services',
     category: 'Medical',
@@ -51,7 +98,7 @@ const services = [
     bookings: 34,
   },
   {
-    id: 6,
+    id: 9,
     name: 'Live Streaming',
     description: 'Professional live streaming and broadcasting services',
     category: 'Media',
@@ -60,7 +107,7 @@ const services = [
     bookings: 23,
   },
   {
-    id: 7,
+    id: 10,
     name: 'Cleaning Service',
     description: 'Post-event cleaning and maintenance',
     category: 'Maintenance',
@@ -69,7 +116,7 @@ const services = [
     bookings: 112,
   },
   {
-    id: 8,
+    id: 11,
     name: 'Security Team',
     description: 'Professional security personnel for events',
     category: 'Security',
@@ -91,13 +138,82 @@ const categoryColors: Record<string, string> = {
   Security: 'bg-gray-800 text-white border-gray-700',
 };
 
-export function ServiceManagement() {
+interface ServiceManagementProps {
+  userRole: UserRole;
+  onNavigate: (page: PageType) => void;
+}
+
+export function ServiceManagement({ userRole, onNavigate }: ServiceManagementProps) {
   const [filter, setFilter] = useState('All');
 
   const filteredServices = filter === 'All' 
     ? services 
     : services.filter(s => s.category === filter);
 
+  const handleBooking = () => {
+    onNavigate('payment');
+  };
+
+  // Customer View - Available Services
+  if (userRole === 'customer') {
+    return (
+      <div className="p-8">
+        <h1 className="mb-8 text-gray-800">Available Services</h1>
+
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          {services.filter(s => s.icon).map((service) => {
+            const Icon = service.icon!;
+            return (
+              <div
+                key={service.id}
+                className="border border-gray-200 rounded-lg p-6 bg-white hover:shadow-lg transition-shadow"
+              >
+                <div className="flex items-start gap-4 mb-4">
+                  <div className="w-12 h-12 bg-blue-100 rounded-lg flex items-center justify-center flex-shrink-0">
+                    <Icon className="w-6 h-6 text-blue-600" />
+                  </div>
+                  <div className="flex-1">
+                    <h3 className="mb-1 text-gray-900">{service.name}</h3>
+                    <span
+                      className={`inline-block px-3 py-1 rounded-full text-sm ${
+                        service.availability === 'Available'
+                          ? 'bg-green-100 text-green-800'
+                          : 'bg-yellow-100 text-yellow-800'
+                      }`}
+                    >
+                      {service.availability}
+                    </span>
+                  </div>
+                </div>
+
+                <p className="text-gray-600 mb-4">{service.description}</p>
+
+                <div className="space-y-2 mb-4">
+                  <div className="flex justify-between items-center">
+                    <span className="text-gray-600">Price:</span>
+                    <span className="text-xl text-gray-900">${service.price}</span>
+                  </div>
+                  <div className="flex justify-between items-center">
+                    <span className="text-gray-600">Duration:</span>
+                    <span className="text-gray-900">{service.duration}</span>
+                  </div>
+                </div>
+
+                <button
+                  onClick={handleBooking}
+                  className="w-full px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+                >
+                  Book Service
+                </button>
+              </div>
+            );
+          })}
+        </div>
+      </div>
+    );
+  }
+
+  // Manager View - Service Management
   return (
     <div className="p-8">
       <div className="mb-8">
