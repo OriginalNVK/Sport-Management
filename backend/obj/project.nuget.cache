@@ -1,0 +1,11 @@
+{
+  "version": 2,
+  "dgSpecHash": "GbOA+AtwjrU=",
+  "success": true,
+  "projectFilePath": "D:\\Đại Học\\Kì 1 - Năm 4\\He_Quan_Tri_CSDL\\Do_An\\Sport-Management\\backend\\backend.csproj",
+  "expectedPackageFiles": [
+    "C:\\Users\\khanh\\.nuget\\packages\\microsoft.aspnetcore.openapi\\9.0.4\\microsoft.aspnetcore.openapi.9.0.4.nupkg.sha512",
+    "C:\\Users\\khanh\\.nuget\\packages\\microsoft.openapi\\1.6.17\\microsoft.openapi.1.6.17.nupkg.sha512"
+  ],
+  "logs": []
+}
