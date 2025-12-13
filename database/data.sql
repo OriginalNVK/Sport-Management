@@ -5,12 +5,12 @@ VALUES
 (N'ViệtSport Đà Nẵng', N'Đà Nẵng', N'45 Hải Châu', '0903000003');
 
 
-INSERT INTO loai_san (ma_loai, ten_loai, don_gia_gio, don_vi_tinh, mo_ta)
+INSERT INTO loai_san (ma_loai, ten_loai, don_vi_tinh, mo_ta)
 VALUES
-(1, N'Sân cầu lông', 80000, 'gio', N'Sân cầu lông tiêu chuẩn'),
-(2, N'Sân bóng rổ', 120000, 'gio', N'Sân bóng rổ ngoài trời'),
-(3, N'Sân tennis', 200000, 'ca', N'Mỗi ca 2 giờ'),
-(4, N'Sân bóng đá mini', 450000, 'tran', N'Thời lượng 90 phút');
+(1, N'Sân cầu lông', 'gio', N'Sân cầu lông tiêu chuẩn'),
+(2, N'Sân bóng rổ', 'gio', N'Sân bóng rổ ngoài trời'),
+(3, N'Sân tennis', 'ca', N'Mỗi ca 2 giờ'),
+(4, N'Sân bóng đá mini', 'tran', N'Thời lượng 90 phút');
 
 
 INSERT INTO san (ma_san, ma_co_so, ma_loai, ten_san, tinh_trang, suc_chua)
@@ -95,10 +95,17 @@ VALUES
 (N'Đặng Trí I', N'Bóng rổ', 200000, '0908000002');
 
 
-INSERT INTO phieu_dat_san (ma_phieu, ma_kh, ma_san, nguoi_tao_phieu, ngay_dat, gio_bat_dau, gio_ket_thuc, hinh_thuc, trang_thai, tong_tien, tinh_trang_tt)
+INSERT INTO phieu_dat_san (ma_phieu, ma_kh, ma_san, nguoi_tao_phieu,ngay_tao_phieu, ngay_dat, gio_bat_dau, gio_ket_thuc, hinh_thuc, trang_thai, tong_tien, tinh_trang_tt)
 VALUES
-(1, 1, 1, 'letan1', GETDATE(), '08:00', '10:00', 'truc_tiep', 'da_xac_nhan', 160000, 'da_tt'),
-(2, 2, 2, 'kh2', GETDATE(), '14:00', '16:00', 'online', 'cho_xac_nhan', 200000, 'chua_tt');
+(1, 1, 1, 'letan1', GETDATE(),'2025-12-20', '08:00', '10:00', 'truc_tiep', 'da_xac_nhan', 160000, 'da_tt'),
+(2, 2, 2, 'kh2', GETDATE(),'2025-12-21', '14:00', '16:00', 'online', 'cho_xac_nhan', 200000, 'chua_tt');
+
+INSERT INTO lich_dat_san (ma_san, ma_phieu, ngay, gio_bat_dau, gio_ket_thuc)
+VALUES
+(1, 1, '2025-12-20', '08:00', '09:00'),
+(1, 1, '2025-12-20', '09:00', '10:00'),
+(2, 2, '2025-12-21', '14:00', '15:00'),
+(2, 2, '2025-12-21', '15:00', '16:00');
 
 
 INSERT INTO chi_tiet_dv (ma_ct, ma_phieu, ma_dv, so_luong, don_gia, thanh_tien)

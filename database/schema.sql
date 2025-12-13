@@ -3,7 +3,6 @@
 CREATE TABLE loai_san (
     ma_loai INT PRIMARY KEY,
     ten_loai NVARCHAR(255),
-    don_gia_gio DECIMAL(18,2),
     don_vi_tinh NVARCHAR(50), -- gio, ca, tran
     mo_ta NVARCHAR(MAX)
 );
@@ -136,7 +135,8 @@ CREATE TABLE phieu_dat_san (
     ma_kh INT FOREIGN KEY REFERENCES khach_hang(ma_kh),
     ma_san INT FOREIGN KEY REFERENCES san(ma_san),
     nguoi_tao_phieu NVARCHAR(50) FOREIGN KEY REFERENCES tai_khoan(ten_dang_nhap),
-    ngay_dat DATETIME,
+    ngay_tao_phieu DATETIME,
+    ngay_dat DATE,
     gio_bat_dau TIME,
     gio_ket_thuc TIME,
     hinh_thuc NVARCHAR(50), -- online, truc_tiep
@@ -144,6 +144,17 @@ CREATE TABLE phieu_dat_san (
     tong_tien DECIMAL(18,2),
     tinh_trang_tt NVARCHAR(50) -- chua_tt, da_tt, hoan_tien
 );
+
+-- Table: lich_dat_san (phuc vu kiem tra san trong)
+CREATE TABLE lich_dat_san (
+    ma_lich INT IDENTITY(1,1) PRIMARY KEY,
+    ma_san INT NOT NULL FOREIGN KEY REFERENCES san(ma_san),
+    ma_phieu INT FOREIGN KEY REFERENCES phieu_dat_san(ma_phieu),
+    ngay DATE NOT NULL,
+    gio_bat_dau TIME NOT NULL,
+    gio_ket_thuc TIME NOT NULL    
+);
+
 
 -- Table: chi_tiet_dv
 CREATE TABLE chi_tiet_dv (
