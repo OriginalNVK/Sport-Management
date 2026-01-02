@@ -2,44 +2,30 @@ using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
 using System.Security.Cryptography;
 using System.Text;
+using backend.Data;
 using backend.DTOs;
 using backend.Helpers;
-using backend.Models;
-using Dapper;
-using Microsoft.Data.SqlClient;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 
 namespace backend.Services;
 
-/// <summary>
-/// Service xử lý các logic liên quan đến authentication
-/// </summary>
 public class AuthService : IAuthService
 {
+    private readonly SportContext _context;
     private readonly IConfiguration _configuration;
-    private readonly string _connectionString;
 
-    public AuthService(IConfiguration configuration)
+    public AuthService(SportContext context, IConfiguration configuration)
     {
+        _context = context;
         _configuration = configuration;
-        _connectionString = _configuration.GetConnectionString("DefaultConnection")
-            ?? throw new InvalidOperationException("Connection string not found");
     }
-
-    /// <summary>
-    /// Xử lý đăng nhập và tạo JWT token
-    /// </summary>
+    
     public async Task<LoginResponse?> LoginAsync(LoginRequest request)
     {
-        using var connection = new SqlConnection(_connectionString);
-
         // Lấy thông tin tài khoản từ database
-        var taiKhoan = await connection.QueryFirstOrDefaultAsync<TaiKhoan>(
-            @"SELECT ten_dang_nhap AS TenDangNhap, mat_khau AS MatKhau, vai_tro AS VaiTro, 
-                     ma_kh AS MaKh, ma_nv AS MaNv, kich_hoat AS KichHoat
-              FROM tai_khoan 
-              WHERE ten_dang_nhap = @TenDangNhap",
-            new { request.TenDangNhap });
+        var taiKhoan = await _context.TaiKhoans
+            .FirstOrDefaultAsync(t => t.TenDangNhap == request.TenDangNhap);
 
         if (taiKhoan == null)
             return null;
@@ -57,7 +43,7 @@ public class AuthService : IAuthService
             Token = token,
             RefreshToken = refreshToken,
             ExpireIn = 30, // 30 phút
-            VaiTro = taiKhoan.VaiTro,
+            VaiTro = taiKhoan.VaiTro ?? string.Empty,
             MaKh = taiKhoan.MaKh,
             MaNv = taiKhoan.MaNv
         };
@@ -68,68 +54,62 @@ public class AuthService : IAuthService
     /// </summary>
     public async Task<string> RegisterCustomerAsync(RegisterRequest request)
     {
-        using var connection = new SqlConnection(_connectionString);
-        await connection.OpenAsync();
-        using var transaction = connection.BeginTransaction();
+        using var transaction = await _context.Database.BeginTransactionAsync();
 
         try
         {
             // Kiểm tra tên đăng nhập đã tồn tại chưa
-            var existingAccount = await connection.QueryFirstOrDefaultAsync<TaiKhoan>(
-                "SELECT * FROM tai_khoan WHERE ten_dang_nhap = @TenDangNhap",
-                new { request.TenDangNhap },
-                transaction);
+            var existingAccount = await _context.TaiKhoans
+                .FirstOrDefaultAsync(t => t.TenDangNhap == request.TenDangNhap);
 
             if (existingAccount != null)
                 throw new InvalidOperationException("Tên đăng nhập đã tồn tại");
 
             // Kiểm tra email đã tồn tại chưa
-            var existingEmail = await connection.QueryFirstOrDefaultAsync<KhachHang>(
-                "SELECT * FROM khach_hang WHERE email = @Email",
-                new { request.Email },
-                transaction);
+            var existingEmail = await _context.KhachHangs
+                .FirstOrDefaultAsync(k => k.Email == request.Email);
 
             if (existingEmail != null)
                 throw new InvalidOperationException("Email đã được sử dụng");
 
             // Lấy mã khách hàng mới
-            var maxMaKh = await connection.QueryFirstOrDefaultAsync<int?>(
-                "SELECT MAX(ma_kh) FROM khach_hang",
-                transaction: transaction) ?? 0;
+            var maxMaKh = await _context.KhachHangs.MaxAsync(k => (int?)k.MaKh) ?? 0;
             var newMaKh = maxMaKh + 1;
 
-            // Insert khách hàng mới
-            await connection.ExecuteAsync(
-                @"INSERT INTO khach_hang (ma_kh, ho_ten, ngay_sinh, gioi_tinh, cmnd_cccd, sdt, email, dia_chi, hang_thanh_vien, ngay_tao)
-                  VALUES (@MaKh, @HoTen, @NgaySinh, @GioiTinh, @CmndCccd, @Sdt, @Email, @DiaChi, 'thuong', @NgayTao)",
-                new
-                {
-                    MaKh = newMaKh,
-                    request.HoTen,
-                    request.NgaySinh,
-                    request.GioiTinh,
-                    request.CmndCccd,
-                    request.Sdt,
-                    request.Email,
-                    request.DiaChi,
-                    NgayTao = DateTime.Now
-                },
-                transaction);
+            // Tạo khách hàng mới
+            var khachHang = new KhachHang
+            {
+                MaKh = newMaKh,
+                HoTen = request.HoTen,
+                NgaySinh = request.NgaySinh.HasValue ? DateOnly.FromDateTime(request.NgaySinh.Value) : null,
+                GioiTinh = request.GioiTinh,
+                CmndCccd = request.CmndCccd,
+                Sdt = request.Sdt,
+                Email = request.Email,
+                DiaChi = request.DiaChi,
+                HangThanhVien = "thuong",
+                NgayTao = DateTime.Now
+            };
+
+            _context.KhachHangs.Add(khachHang);
+            await _context.SaveChangesAsync();
 
             // Hash password bằng MD5
             var hashedPassword = MD5Helper.HashPassword(request.MatKhau);
 
-            // Insert tài khoản mới (tự động kích hoạt)
-            await connection.ExecuteAsync(
-                @"INSERT INTO tai_khoan (ten_dang_nhap, mat_khau, vai_tro, ma_kh, ma_nv, kich_hoat)
-                  VALUES (@TenDangNhap, @MatKhau, 'khach_hang', @MaKh, NULL, 1)",
-                new
-                {
-                    request.TenDangNhap,
-                    MatKhau = hashedPassword,
-                    MaKh = newMaKh
-                },
-                transaction);
+            // Tạo tài khoản mới (tự động kích hoạt)
+            var taiKhoan = new TaiKhoan
+            {
+                TenDangNhap = request.TenDangNhap,
+                MatKhau = hashedPassword,
+                VaiTro = "khach_hang",
+                MaKh = newMaKh,
+                MaNv = null,
+                KichHoat = true
+            };
+
+            _context.TaiKhoans.Add(taiKhoan);
+            await _context.SaveChangesAsync();
 
             await transaction.CommitAsync();
             return "Tài khoản đăng ký thành công";
@@ -146,43 +126,33 @@ public class AuthService : IAuthService
     /// </summary>
     public async Task<string> RegisterEmployeeAsync(RegisterEmployeeRequest request)
     {
-        using var connection = new SqlConnection(_connectionString);
-        await connection.OpenAsync();
-        using var transaction = connection.BeginTransaction();
+        using var transaction = await _context.Database.BeginTransactionAsync();
 
         try
         {
             // Kiểm tra tên đăng nhập đã tồn tại chưa
-            var existingAccount = await connection.QueryFirstOrDefaultAsync<TaiKhoan>(
-                "SELECT * FROM tai_khoan WHERE ten_dang_nhap = @TenDangNhap",
-                new { request.TenDangNhap },
-                transaction);
+            var existingAccount = await _context.TaiKhoans
+                .FirstOrDefaultAsync(t => t.TenDangNhap == request.TenDangNhap);
 
             if (existingAccount != null)
                 throw new InvalidOperationException("Tên đăng nhập đã tồn tại");
 
             // Kiểm tra email đã tồn tại chưa
-            var existingEmail = await connection.QueryFirstOrDefaultAsync<NhanVien>(
-                "SELECT * FROM nhan_vien WHERE email = @Email",
-                new { request.Email },
-                transaction);
+            var existingEmail = await _context.NhanViens
+                .FirstOrDefaultAsync(n => n.Email == request.Email);
 
             if (existingEmail != null)
                 throw new InvalidOperationException("Email đã được sử dụng");
 
             // Kiểm tra cơ sở có tồn tại không
-            var coSoExists = await connection.QueryFirstOrDefaultAsync<int?>(
-                "SELECT ma_co_so FROM co_so WHERE ma_co_so = @MaCoSo",
-                new { request.MaCoSo },
-                transaction);
+            var coSoExists = await _context.CoSos
+                .AnyAsync(c => c.MaCoSo == request.MaCoSo);
 
-            if (coSoExists == null)
+            if (!coSoExists)
                 throw new InvalidOperationException("Mã cơ sở không tồn tại");
 
             // Lấy mã nhân viên mới
-            var maxMaNv = await connection.QueryFirstOrDefaultAsync<int?>(
-                "SELECT MAX(ma_nv) FROM nhan_vien",
-                transaction: transaction) ?? 0;
+            var maxMaNv = await _context.NhanViens.MaxAsync(n => (int?)n.MaNv) ?? 0;
             var newMaNv = maxMaNv + 1;
 
             // Xác định vai trò dựa trên chức vụ
@@ -195,42 +165,42 @@ public class AuthService : IAuthService
                 _ => "nhanvien_bt"
             };
 
-            // Insert nhân viên mới
-            await connection.ExecuteAsync(
-                @"INSERT INTO nhan_vien (ma_nv, ma_co_so, ho_ten, ngay_sinh, gioi_tinh, cmnd_cccd, sdt, email, dia_chi, chuc_vu, luong_co_ban, ngay_tuyen)
-                  VALUES (@MaNv, @MaCoSo, @HoTen, @NgaySinh, @GioiTinh, @CmndCccd, @Sdt, @Email, @DiaChi, @ChucVu, @LuongCoBan, @NgayTuyen)",
-                new
-                {
-                    MaNv = newMaNv,
-                    request.MaCoSo,
-                    request.HoTen,
-                    request.NgaySinh,
-                    request.GioiTinh,
-                    request.CmndCccd,
-                    request.Sdt,
-                    request.Email,
-                    request.DiaChi,
-                    request.ChucVu,
-                    request.LuongCoBan,
-                    NgayTuyen = DateTime.Now
-                },
-                transaction);
+            // Tạo nhân viên mới
+            var nhanVien = new NhanVien
+            {
+                MaNv = newMaNv,
+                MaCoSo = request.MaCoSo,
+                HoTen = request.HoTen,
+                NgaySinh = request.NgaySinh.HasValue ? DateOnly.FromDateTime(request.NgaySinh.Value) : null,
+                GioiTinh = request.GioiTinh,
+                CmndCccd = request.CmndCccd,
+                Sdt = request.Sdt,
+                Email = request.Email,
+                DiaChi = request.DiaChi,
+                ChucVu = request.ChucVu,
+                LuongCoBan = request.LuongCoBan,
+                NgayTuyen = DateTime.Now
+            };
+
+            _context.NhanViens.Add(nhanVien);
+            await _context.SaveChangesAsync();
 
             // Hash password bằng MD5
             var hashedPassword = MD5Helper.HashPassword(request.MatKhau);
 
-            // Insert tài khoản mới (tự động kích hoạt)
-            await connection.ExecuteAsync(
-                @"INSERT INTO tai_khoan (ten_dang_nhap, mat_khau, vai_tro, ma_kh, ma_nv, kich_hoat)
-                  VALUES (@TenDangNhap, @MatKhau, @VaiTro, NULL, @MaNv, 1)",
-                new
-                {
-                    request.TenDangNhap,
-                    MatKhau = hashedPassword,
-                    VaiTro = vaiTro,
-                    MaNv = newMaNv
-                },
-                transaction);
+            // Tạo tài khoản mới (tự động kích hoạt)
+            var taiKhoan = new TaiKhoan
+            {
+                TenDangNhap = request.TenDangNhap,
+                MatKhau = hashedPassword,
+                VaiTro = vaiTro,
+                MaKh = null,
+                MaNv = newMaNv,
+                KichHoat = true
+            };
+
+            _context.TaiKhoans.Add(taiKhoan);
+            await _context.SaveChangesAsync();
 
             await transaction.CommitAsync();
             return "Tài khoản nhân viên đăng ký thành công";
@@ -258,7 +228,7 @@ public class AuthService : IAuthService
         var claims = new List<Claim>
         {
             new Claim(ClaimTypes.Name, taiKhoan.TenDangNhap),
-            new Claim(ClaimTypes.Role, taiKhoan.VaiTro),
+            new Claim(ClaimTypes.Role, taiKhoan.VaiTro ?? "user"),
             new Claim(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString())
         };
 

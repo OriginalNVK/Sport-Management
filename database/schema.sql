@@ -1,3 +1,6 @@
+CREATE DATABASE QuanLySanBong;
+USE QuanLySanBong;
+
 -- Active: 1763047677278@@127.0.0.1@1433@TTTT
 -- Table: loai_san
 CREATE TABLE loai_san (
@@ -60,7 +63,7 @@ CREATE TABLE nhan_vien (
 CREATE TABLE tai_khoan (
     ten_dang_nhap NVARCHAR(50) PRIMARY KEY,
     mat_khau NVARCHAR(255),
-    vai_tro NVARCHAR(50), -- khach_hang, le_tan, thu_ngan, ky_thuat, quan_ly, admin
+    vai_tro NVARCHAR(50), -- khach_hang, le_tan, thu_ngan, ky_thuat, quan_ly, admin, nhanvien_bt
     ma_kh INT NULL FOREIGN KEY REFERENCES khach_hang(ma_kh),
     ma_nv INT NULL FOREIGN KEY REFERENCES nhan_vien(ma_nv),
     kich_hoat BIT

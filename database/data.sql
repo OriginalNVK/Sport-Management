@@ -1,3 +1,5 @@
+USE QuanLySanBong;
+
 INSERT INTO co_so (ten_co_so, thanh_pho, dia_chi, sdt)
 VALUES
 (N'ViệtSport Hà Nội', N'Hà Nội', N'12 Cầu Giấy', '0901000001'),
