@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { Login } from './components/Login';
+import { Register } from './components/Register';
 import { Sidebar } from './components/Sidebar';
 import { Dashboard } from './components/Dashboard';
 import { UserManagement } from './components/UserManagement';
@@ -14,6 +15,7 @@ export type UserRole = 'customer' | 'manager';
 
 export default function App() {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [showRegister, setShowRegister] = useState(false);
   const [userEmail, setUserEmail] = useState('');
   const [userRole, setUserRole] = useState<UserRole>('customer');
   const [currentPage, setCurrentPage] = useState<PageType>('dashboard');
@@ -22,11 +24,20 @@ export default function App() {
     setUserEmail(email);
     setUserRole(role);
     setIsAuthenticated(true);
+    setShowRegister(false);
+    setCurrentPage('dashboard');
+  };
+
+  const handleRegisterSuccess = (role: UserRole) => {
+    setUserRole(role);
+    setIsAuthenticated(true);
+    setShowRegister(false);
     setCurrentPage('dashboard');
   };
 
   const handleLogout = () => {
     setIsAuthenticated(false);
+    setShowRegister(false);
     setUserEmail('');
     setUserRole('customer');
     setCurrentPage('dashboard');
@@ -54,7 +65,20 @@ export default function App() {
   };
 
   if (!isAuthenticated) {
-    return <Login onLogin={handleLogin} />;
+    if (showRegister) {
+      return (
+        <Register 
+          onRegisterSuccess={handleRegisterSuccess}
+          onBackToLogin={() => setShowRegister(false)}
+        />
+      );
+    }
+    return (
+      <Login 
+        onLogin={handleLogin}
+        onShowRegister={() => setShowRegister(true)}
+      />
+    );
   }
 
   return (

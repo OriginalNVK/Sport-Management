@@ -1,7 +1,8 @@
-import { CreditCard, DollarSign, TrendingUp, CheckCircle, Clock, XCircle } from 'lucide-react';
+import { CreditCard, DollarSign, TrendingUp, CheckCircle, Clock, XCircle, Trash2, Plus, FileText } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from './ui/card';
 import { Badge } from './ui/badge';
 import { Button } from './ui/button';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from './ui/tabs';
 import type { UserRole } from '../App';
 
 const transactions = [
@@ -94,42 +95,8 @@ export function Payment({ userRole }: PaymentProps) {
 
   // Customer View - Customer Payment History
   if (userRole === 'customer') {
-    const paymentHistory = [
-      {
-        id: 1,
-        invoice: 'INV-001',
-        description: 'Football Field A - 2 hours',
-        date: '2025-11-20',
-        amount: 100,
-        status: 'paid',
-      },
-      {
-        id: 2,
-        invoice: 'INV-002',
-        description: 'Volleyball Court B - 2 hours',
-        date: '2025-11-25',
-        amount: 70,
-        status: 'paid',
-      },
-      {
-        id: 3,
-        invoice: 'INV-003',
-        description: 'Basketball Court C - 3 hours',
-        date: '2025-11-28',
-        amount: 120,
-        status: 'paid',
-      },
-      {
-        id: 4,
-        invoice: 'INV-004',
-        description: 'Tennis Court E - 2 hours',
-        date: '2025-11-30',
-        amount: 60,
-        status: 'paid',
-      },
-    ];
-
-    const pendingPayments = [
+    // Danh sách hóa đơn đã tạo (chưa thanh toán)
+    const invoices = [
       {
         id: 1,
         invoice: 'INV-005',
@@ -148,102 +115,327 @@ export function Payment({ userRole }: PaymentProps) {
         amount: 35,
         status: 'pending',
       },
+      {
+        id: 3,
+        invoice: 'INV-007',
+        description: 'Basketball Court C - 2 hours',
+        date: '2025-12-10',
+        dueDate: '2025-12-17',
+        amount: 80,
+        status: 'pending',
+      },
+    ];
+
+    // Danh sách hóa đơn đã thanh toán
+    const paidInvoices = [
+      {
+        id: 1,
+        invoice: 'INV-001',
+        description: 'Football Field A - 2 hours',
+        date: '2025-11-20',
+        paidDate: '2025-11-21',
+        amount: 100,
+        status: 'paid',
+        method: 'Credit Card',
+      },
+      {
+        id: 2,
+        invoice: 'INV-002',
+        description: 'Volleyball Court B - 2 hours',
+        date: '2025-11-25',
+        paidDate: '2025-11-26',
+        amount: 70,
+        status: 'paid',
+        method: 'PayPal',
+      },
+      {
+        id: 3,
+        invoice: 'INV-003',
+        description: 'Basketball Court C - 3 hours',
+        date: '2025-11-28',
+        paidDate: '2025-11-29',
+        amount: 120,
+        status: 'paid',
+        method: 'Credit Card',
+      },
+      {
+        id: 4,
+        invoice: 'INV-004',
+        description: 'Tennis Court E - 2 hours',
+        date: '2025-11-30',
+        paidDate: '2025-12-01',
+        amount: 60,
+        status: 'paid',
+        method: 'Debit Card',
+      },
     ];
 
     return (
       <div className="p-8">
         <h1 className="mb-8 text-gray-800">Payment & Invoices</h1>
 
-        {/* Pending Payments Section */}
-        <section className="mb-12">
-          <div className="flex items-center gap-2 mb-4">
-            <Clock className="w-6 h-6 text-yellow-600" />
-            <h2 className="text-gray-700">Pending Payments</h2>
-          </div>
-          <div className="space-y-4">
-            {pendingPayments.map((payment) => (
-              <div
-                key={payment.id}
-                className="border border-yellow-200 bg-yellow-50 rounded-lg p-6"
-              >
-                <div className="flex items-start justify-between">
-                  <div className="flex-1">
-                    <div className="flex items-center gap-3 mb-2">
-                      <span className="px-3 py-1 bg-yellow-200 text-yellow-800 rounded">
-                        {payment.invoice}
-                      </span>
-                      <span className="text-red-600">Due: {payment.dueDate}</span>
-                    </div>
-                    <h3 className="mb-2 text-gray-900">{payment.description}</h3>
-                    <p className="text-gray-600">Booking Date: {payment.date}</p>
-                  </div>
-                  <div className="text-right">
-                    <p className="text-3xl mb-4 text-gray-900">${payment.amount}</p>
-                    <button className="px-6 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors">
-                      Pay Now
-                    </button>
-                  </div>
-                </div>
-              </div>
-            ))}
-          </div>
-        </section>
+        <Tabs defaultValue="invoices" className="w-full">
+          <TabsList className="grid w-full grid-cols-2 mb-8 bg-gray-100 border-2 border-gray-300">
+            <TabsTrigger 
+              value="invoices" 
+              className="flex items-center gap-2 data-[state=active]:bg-blue-600 data-[state=active]:text-white"
+            >
+              <FileText className="w-4 h-4" />
+              Invoices
+            </TabsTrigger>
+            <TabsTrigger 
+              value="payments" 
+              className="flex items-center gap-2 data-[state=active]:bg-blue-600 data-[state=active]:text-white"
+            >
+              <CreditCard className="w-4 h-4" />
+              Payments
+            </TabsTrigger>
+          </TabsList>
 
-        {/* Payment History Section */}
-        <section>
-          <div className="flex items-center gap-2 mb-4">
-            <CheckCircle className="w-6 h-6 text-green-600" />
-            <h2 className="text-gray-700">Payment History</h2>
-          </div>
-          <div className="border border-gray-200 rounded-lg overflow-hidden">
-            <table className="w-full">
-              <thead className="bg-gray-50">
-                <tr>
-                  <th className="px-6 py-3 text-left text-gray-700">Invoice</th>
-                  <th className="px-6 py-3 text-left text-gray-700">Description</th>
-                  <th className="px-6 py-3 text-left text-gray-700">Date</th>
-                  <th className="px-6 py-3 text-left text-gray-700">Amount</th>
-                  <th className="px-6 py-3 text-left text-gray-700">Status</th>
-                </tr>
-              </thead>
-              <tbody className="bg-white divide-y divide-gray-200">
-                {paymentHistory.map((payment) => (
-                  <tr key={payment.id} className="hover:bg-gray-50">
-                    <td className="px-6 py-4 text-gray-900">{payment.invoice}</td>
-                    <td className="px-6 py-4 text-gray-900">{payment.description}</td>
-                    <td className="px-6 py-4 text-gray-900">{payment.date}</td>
-                    <td className="px-6 py-4 text-gray-900">${payment.amount}</td>
-                    <td className="px-6 py-4">
-                      <span className="inline-flex items-center gap-1 px-3 py-1 bg-green-100 text-green-800 rounded-full">
-                        <CheckCircle className="w-4 h-4" />
-                        Paid
-                      </span>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-          <div className="mt-6 p-6 bg-gray-50 rounded-lg">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-3">
-                <CreditCard className="w-8 h-8 text-gray-600" />
-                <div>
-                  <p className="text-gray-600">Total Paid</p>
-                  <p className="text-2xl text-gray-900">
-                    ${paymentHistory.reduce((sum, p) => sum + p.amount, 0)}
-                  </p>
+          {/* Tab Invoices */}
+          <TabsContent value="invoices" className="space-y-8">
+            {/* Create Invoice Section */}
+            <section>
+              <div className="flex items-center justify-between mb-4">
+                <div className="flex items-center gap-2">
+                  <Plus className="w-6 h-6 text-blue-600" />
+                  <h2 className="text-gray-700">Create New Invoice</h2>
                 </div>
               </div>
-              <div className="text-right">
-                <p className="text-gray-600">Outstanding Balance</p>
-                <p className="text-2xl text-red-600">
-                  ${pendingPayments.reduce((sum, p) => sum + p.amount, 0)}
-                </p>
+              <Card className="shadow-sm border-2 border-blue-100">
+                <CardContent className="pt-6">
+                  <div className="space-y-4">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <div>
+                        <label className="block text-sm text-gray-600 mb-2">
+                          Select Booking
+                        </label>
+                        <select className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
+                          <option>Booking #001 - Football Field A</option>
+                          <option>Booking #002 - Basketball Court C</option>
+                          <option>Booking #003 - Tennis Court E</option>
+                        </select>
+                      </div>
+                      <div>
+                        <label className="block text-sm text-gray-600 mb-2">
+                          Tax Rate (%)
+                        </label>
+                        <input
+                          type="number"
+                          defaultValue="10"
+                          className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        />
+                      </div>
+                    </div>
+                    <div>
+                      <label className="block text-sm text-gray-600 mb-2">
+                        Discount Codes (Optional)
+                      </label>
+                      <input
+                        type="text"
+                        placeholder="Enter discount codes separated by comma"
+                        className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      />
+                    </div>
+                    <div className="flex justify-end">
+                      <Button className="bg-blue-600 hover:bg-blue-700 text-white">
+                        <Plus className="w-4 h-4 mr-2" />
+                        Create Invoice
+                      </Button>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            </section>
+
+            {/* Unpaid Invoices List */}
+            <section>
+              <div className="flex items-center gap-2 mb-4">
+                <Clock className="w-6 h-6 text-yellow-600" />
+                <h2 className="text-gray-700">Unpaid Invoices</h2>
+                <Badge className="bg-yellow-100 text-yellow-800 border-yellow-200">
+                  {invoices.length} pending
+                </Badge>
               </div>
-            </div>
-          </div>
-        </section>
+              <Card className="shadow-sm">
+                <CardContent className="p-0">
+                  <div className="overflow-x-auto">
+                    <table className="w-full">
+                      <thead className="bg-gray-50 border-b border-gray-200">
+                        <tr>
+                          <th className="px-6 py-3 text-left text-sm text-gray-700">Invoice ID</th>
+                          <th className="px-6 py-3 text-left text-sm text-gray-700">Description</th>
+                          <th className="px-6 py-3 text-left text-sm text-gray-700">Created Date</th>
+                          <th className="px-6 py-3 text-left text-sm text-gray-700">Due Date</th>
+                          <th className="px-6 py-3 text-left text-sm text-gray-700">Amount</th>
+                          <th className="px-6 py-3 text-left text-sm text-gray-700">Status</th>
+                          <th className="px-6 py-3 text-right text-sm text-gray-700">Actions</th>
+                        </tr>
+                      </thead>
+                      <tbody className="bg-white divide-y divide-gray-200">
+                        {invoices.map((invoice) => (
+                          <tr key={invoice.id} className="hover:bg-gray-50">
+                            <td className="px-6 py-4">
+                              <span className="px-3 py-1 bg-blue-100 text-blue-800 rounded text-sm">
+                                {invoice.invoice}
+                              </span>
+                            </td>
+                            <td className="px-6 py-4 text-gray-900">{invoice.description}</td>
+                            <td className="px-6 py-4 text-gray-600">{invoice.date}</td>
+                            <td className="px-6 py-4">
+                              <span className="text-red-600">{invoice.dueDate}</span>
+                            </td>
+                            <td className="px-6 py-4">
+                              <span className="text-lg text-gray-900">${invoice.amount}</span>
+                            </td>
+                            <td className="px-6 py-4">
+                              <Badge className="bg-yellow-100 text-yellow-800 border-yellow-200">
+                                <Clock className="w-3 h-3 mr-1" />
+                                Pending
+                              </Badge>
+                            </td>
+                            <td className="px-6 py-4">
+                              <div className="flex items-center justify-end gap-2">
+                                <Button
+                                  size="sm"
+                                  className="bg-green-600 hover:bg-green-700 text-white"
+                                >
+                                  <CreditCard className="w-4 h-4 mr-1" />
+                                  Pay
+                                </Button>
+                                <Button
+                                  size="sm"
+                                  variant="destructive"
+                                  className="bg-red-600 hover:bg-red-700"
+                                >
+                                  <Trash2 className="w-4 h-4" />
+                                </Button>
+                              </div>
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                </CardContent>
+              </Card>
+
+              {/* Summary */}
+              <Card className="mt-4 shadow-sm bg-yellow-50 border-yellow-200">
+                <CardContent className="pt-6">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-3">
+                      <Clock className="w-8 h-8 text-yellow-600" />
+                      <div>
+                        <p className="text-gray-600">Total Outstanding</p>
+                        <p className="text-2xl text-gray-900">
+                          ${invoices.reduce((sum, inv) => sum + inv.amount, 0)}
+                        </p>
+                      </div>
+                    </div>
+                    <Button className="bg-green-600 hover:bg-green-700 text-white">
+                      Pay All Invoices
+                    </Button>
+                  </div>
+                </CardContent>
+              </Card>
+            </section>
+          </TabsContent>
+
+          {/* Tab Payments */}
+          <TabsContent value="payments" className="space-y-8">
+            <section>
+              <div className="flex items-center gap-2 mb-4">
+                <CheckCircle className="w-6 h-6 text-green-600" />
+                <h2 className="text-gray-700">Payment History</h2>
+                <Badge className="bg-green-100 text-green-800 border-green-200">
+                  {paidInvoices.length} completed
+                </Badge>
+              </div>
+              <Card className="shadow-sm">
+                <CardContent className="p-0">
+                  <div className="overflow-x-auto">
+                    <table className="w-full">
+                      <thead className="bg-gray-50 border-b border-gray-200">
+                        <tr>
+                          <th className="px-6 py-3 text-left text-sm text-gray-700">Invoice ID</th>
+                          <th className="px-6 py-3 text-left text-sm text-gray-700">Description</th>
+                          <th className="px-6 py-3 text-left text-sm text-gray-700">Booking Date</th>
+                          <th className="px-6 py-3 text-left text-sm text-gray-700">Paid Date</th>
+                          <th className="px-6 py-3 text-left text-sm text-gray-700">Amount</th>
+                          <th className="px-6 py-3 text-left text-sm text-gray-700">Method</th>
+                          <th className="px-6 py-3 text-left text-sm text-gray-700">Status</th>
+                        </tr>
+                      </thead>
+                      <tbody className="bg-white divide-y divide-gray-200">
+                        {paidInvoices.map((payment) => (
+                          <tr key={payment.id} className="hover:bg-gray-50">
+                            <td className="px-6 py-4">
+                              <span className="px-3 py-1 bg-green-100 text-green-800 rounded text-sm">
+                                {payment.invoice}
+                              </span>
+                            </td>
+                            <td className="px-6 py-4 text-gray-900">{payment.description}</td>
+                            <td className="px-6 py-4 text-gray-600">{payment.date}</td>
+                            <td className="px-6 py-4 text-gray-600">{payment.paidDate}</td>
+                            <td className="px-6 py-4">
+                              <span className="text-lg text-gray-900">${payment.amount}</span>
+                            </td>
+                            <td className="px-6 py-4">
+                              <div className="flex items-center gap-2 text-gray-600">
+                                <CreditCard className="w-4 h-4" />
+                                {payment.method}
+                              </div>
+                            </td>
+                            <td className="px-6 py-4">
+                              <Badge className="bg-green-100 text-green-800 border-green-200">
+                                <CheckCircle className="w-3 h-3 mr-1" />
+                                Paid
+                              </Badge>
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                </CardContent>
+              </Card>
+
+              {/* Summary */}
+              <Card className="mt-4 shadow-sm bg-green-50 border-green-200">
+                <CardContent className="pt-6">
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                    <div className="flex items-center gap-3">
+                      <CheckCircle className="w-8 h-8 text-green-600" />
+                      <div>
+                        <p className="text-gray-600">Total Paid</p>
+                        <p className="text-2xl text-gray-900">
+                          ${paidInvoices.reduce((sum, p) => sum + p.amount, 0)}
+                        </p>
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-3">
+                      <FileText className="w-8 h-8 text-blue-600" />
+                      <div>
+                        <p className="text-gray-600">Total Transactions</p>
+                        <p className="text-2xl text-gray-900">{paidInvoices.length}</p>
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-3">
+                      <TrendingUp className="w-8 h-8 text-purple-600" />
+                      <div>
+                        <p className="text-gray-600">Average Payment</p>
+                        <p className="text-2xl text-gray-900">
+                          ${Math.round(paidInvoices.reduce((sum, p) => sum + p.amount, 0) / paidInvoices.length)}
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            </section>
+          </TabsContent>
+        </Tabs>
       </div>
     );
   }

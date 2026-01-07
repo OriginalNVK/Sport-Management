@@ -4,41 +4,42 @@ import { Card, CardContent, CardHeader, CardTitle } from './ui/card';
 import { Input } from './ui/input';
 import { Button } from './ui/button';
 import { Label } from './ui/label';
+import { authService } from '../services/AuthService';
 
 interface LoginProps {
   onLogin: (email: string, role: 'customer' | 'manager') => void;
+  onShowRegister?: () => void;
 }
 
-export function Login({ onLogin }: LoginProps) {
+export function Login({ onLogin, onShowRegister }: LoginProps) {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
   const [isLoading, setIsLoading] = useState(false);
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
     setIsLoading(true);
 
-    // Demo accounts
-    const accounts = [
-      { email: 'customer@example.com', password: '12345678', role: 'customer' as const },
-      { email: 'manage@example.com', password: '12345678', role: 'manager' as const },
-    ];
+    try {
+      const response = await authService.login({
+        tenDangNhap: email,
+        matKhau: password,
+      });
 
-    // Find matching account
-    const account = accounts.find(
-      (acc) => acc.email === email && acc.password === password
-    );
-
-    setTimeout(() => {
-      if (account) {
-        onLogin(account.email, account.role);
-      } else {
-        setError('Invalid email or password');
+      // Xác định role dựa trên vaiTro từ backend
+      let role: 'customer' | 'manager' = 'customer';
+      if (response.vaiTro === 'quan_ly' || response.vaiTro === 'admin') {
+        role = 'manager';
       }
+
+      onLogin(email, role);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Đăng nhập thất bại');
+    } finally {
       setIsLoading(false);
-    }, 500);
+    }
   };
 
   return (
@@ -110,21 +111,16 @@ export function Login({ onLogin }: LoginProps) {
           </form>
 
           <div className="mt-8 pt-6 border-t border-gray-200">
-            <p className="text-sm text-gray-600 mb-3 font-semibold">Demo Accounts:</p>
-            <div className="space-y-2 text-sm">
-              <div className="bg-blue-50 px-3 py-2 rounded border border-blue-200">
-                <p className="text-gray-700">
-                  <span className="font-semibold">Customer:</span> customer@example.com
-                </p>
-                <p className="text-gray-600 text-xs">Password: 12345678</p>
-              </div>
-              <div className="bg-green-50 px-3 py-2 rounded border border-green-200">
-                <p className="text-gray-700">
-                  <span className="font-semibold">Manager:</span> manage@example.com
-                </p>
-                <p className="text-gray-600 text-xs">Password: 12345678</p>
-              </div>
-            </div>
+            <p className="text-sm text-gray-600 text-center">
+              Don't have an account?{' '}
+              <button
+                type="button"
+                onClick={onShowRegister}
+                className="text-blue-600 hover:text-blue-700 font-semibold"
+              >
+                Register now
+              </button>
+            </p>
           </div>
         </CardContent>
       </Card>
