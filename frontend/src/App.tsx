@@ -9,15 +9,16 @@ import { Booking } from './components/Booking';
 import { ServiceManagement } from './components/ServiceManagement';
 import { Payment } from './components/Payment';
 import { Profile } from './components/Profile';
-
 export type PageType = 'dashboard' | 'users' | 'stadiums' | 'booking' | 'services' | 'payment' | 'profile';
 export type UserRole = 'customer' | 'manager';
 
 export default function App() {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
+  //const [isAuthenticated, setIsAuthenticated] = useState(true);
   const [showRegister, setShowRegister] = useState(false);
   const [userEmail, setUserEmail] = useState('');
-  const [userRole, setUserRole] = useState<UserRole>('customer');
+  //const [userRole, setUserRole] = useState<UserRole>('customer');
+  const [userRole, setUserRole] = useState<UserRole>('manager');
   const [currentPage, setCurrentPage] = useState<PageType>('dashboard');
 
   const handleLogin = (email: string, role: UserRole) => {
