@@ -365,3 +365,6 @@ secrets.json
 *.db
 *.sqlite
 *.sqlite3
+
+bin/
+obj/

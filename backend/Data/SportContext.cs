@@ -15,7 +15,7 @@ public partial class SportContext : DbContext
     {
     }
 
-    public virtual DbSet<BangGium> BangGia { get; set; }
+    public virtual DbSet<BangGium> BangGiums { get; set; }
 
     public virtual DbSet<BaoCao> BaoCaos { get; set; }
 
@@ -65,9 +65,9 @@ public partial class SportContext : DbContext
 
     public virtual DbSet<UuDai> UuDais { get; set; }
 
-    protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
-#warning To protect potentially sensitive information in your connection string, you should move it out of source code. You can avoid scaffolding the connection string by using the Name= syntax to read it from configuration - see https://go.microsoft.com/fwlink/?linkid=2131148. For more guidance on storing connection strings, see https://go.microsoft.com/fwlink/?LinkId=723263.
-        => optionsBuilder.UseSqlServer("Server=ORIGINALNVK\\SQLEXPRESS;Database=QuanLySanBong;User Id=sa;Password=27072004;TrustServerCertificate=True;");
+//     protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
+// #warning To protect potentially sensitive information in your connection string, you should move it out of source code. You can avoid scaffolding the connection string by using the Name= syntax to read it from configuration - see https://go.microsoft.com/fwlink/?linkid=2131148. For more guidance on storing connection strings, see https://go.microsoft.com/fwlink/?LinkId=723263.
+//         => optionsBuilder.UseSqlServer("Server=LAPTOP-2K5E710T\\MSSQLSERVER2025;Database=QuanLySanBong;User Id=sa;Password=Uyen1701*SQL; TrustServerCertificate=True;");
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {

@@ -4,7 +4,7 @@ API backend cho hệ thống quản lý sân bóng được xây dựng với .N
 
 ## 📋 Yêu cầu hệ thống
 
-- .NET 9.0 SDK
+- winget install Microsoft.DotNet.SDK.9
 - SQL Server (Express hoặc cao hơn)
 - Visual Studio 2022 hoặc VS Code (khuyến nghị)
 
