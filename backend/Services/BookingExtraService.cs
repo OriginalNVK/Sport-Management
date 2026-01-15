@@ -233,4 +233,64 @@ public class BookingExtrasService : IBookingExtrasService
         await _db.SaveChangesAsync();
         return true;
     }
+
+    public async Task<ServiceInfoResponse?> GetServiceInfoAsync(int maDv, int? maCoSo)
+    {
+        // dich_vu
+        var dv = await _db.DichVus
+            .AsNoTracking()
+            .FirstOrDefaultAsync(x => x.MaDv == maDv);
+
+        if (dv == null) return null;
+
+        // ton_kho_dich_vu (optional theo cơ sở)
+        int? soLuongTon = null;
+        DateTime? ngayCapNhat = null;
+
+        if (maCoSo.HasValue)
+        {
+            var tonKho = await _db.TonKhoDichVus
+                .AsNoTracking()
+                .Where(t => t.MaDv == maDv && t.MaCoSo == maCoSo.Value)
+                .OrderByDescending(t => t.NgayCapNhat)
+                .FirstOrDefaultAsync();
+
+            if (tonKho != null)
+            {
+                soLuongTon = tonKho.SoLuongTon;
+                ngayCapNhat = tonKho.NgayCapNhat;
+            }
+        }
+
+        return new ServiceInfoResponse
+        {
+            MaDv = dv.MaDv,
+            TenDv = dv.TenDv,
+            LoaiDv = dv.LoaiDv,
+            DonGia = dv.DonGia ?? 0m,
+            DonVi = dv.DonVi,
+            TrangThai = dv.TrangThai,
+
+            MaCoSo = maCoSo,
+            SoLuongTon = soLuongTon,
+            NgayCapNhat = ngayCapNhat
+        };
+    }
+
+    public async Task<List<ServiceInfoResponse>> GetServiceListAsync()
+    {
+        return await _db.DichVus
+            .AsNoTracking()
+            .Select(d => new ServiceInfoResponse
+            {
+                MaDv = d.MaDv,
+                TenDv = d.TenDv,
+                LoaiDv = d.LoaiDv,
+                DonGia = d.DonGia ?? 0m,
+                DonVi = d.DonVi,
+                TrangThai = d.TrangThai
+            })
+            .ToListAsync();
+    }
+
 }

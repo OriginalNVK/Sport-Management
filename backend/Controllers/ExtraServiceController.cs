@@ -107,4 +107,36 @@ public class BookingExtrasController : ControllerBase
             return BadRequest(new { success = false, message = ex.Message });
         }
     }
+
+    // GET: /api/v1/bookingextras/service/{ma_dv}?ma_co_so=1
+    [HttpGet("service/{ma_dv}")]
+    public async Task<ActionResult<object>> GetServiceInfo(int ma_dv, [FromQuery] int? ma_co_so)
+    {
+        try
+        {
+            var data = await _service.GetServiceInfoAsync(ma_dv, ma_co_so);
+            if (data == null)
+                return NotFound(new { success = false, message = "Không tìm thấy dịch vụ" });
+
+            return Ok(new { success = true, data });
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Lỗi không xác định khi lấy thông tin dịch vụ");
+            return StatusCode(500, new { success = false, message = "Đã xảy ra lỗi khi lấy thông tin dịch vụ" });
+        }
+    }
+    // GET: /api/v1/bookingextras/services
+    [HttpGet("services")]
+    public async Task<ActionResult<object>> GetServiceList()
+    {
+        var data = await _service.GetServiceListAsync();
+        return Ok(new
+        {
+            success = true,
+            data,
+            count = data.Count
+        });
+    }
+
 }
