@@ -1,5 +1,8 @@
 CREATE DATABASE QuanLySanBong;
+GO
+
 USE QuanLySanBong;
+GO
 
 -- Active: 1763047677278@@127.0.0.1@1433@TTTT
 -- Table: loai_san

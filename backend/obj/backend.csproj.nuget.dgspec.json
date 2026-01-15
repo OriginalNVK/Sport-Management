@@ -1,6 +1,7 @@
 {
   "format": 1,
   "restore": {
+<<<<<<< HEAD
     "D:\\Hoccode\\Sport\\Sport-Management\\backend\\backend.csproj": {}
   },
   "projects": {
@@ -12,13 +13,30 @@
         "projectPath": "D:\\Hoccode\\Sport\\Sport-Management\\backend\\backend.csproj",
         "packagesPath": "C:\\Users\\84328\\.nuget\\packages\\",
         "outputPath": "D:\\Hoccode\\Sport\\Sport-Management\\backend\\obj\\",
+=======
+    "C:\\hqt\\seminar\\Sport-Management\\backend\\backend.csproj": {}
+  },
+  "projects": {
+    "C:\\hqt\\seminar\\Sport-Management\\backend\\backend.csproj": {
+      "version": "1.0.0",
+      "restore": {
+        "projectUniqueName": "C:\\hqt\\seminar\\Sport-Management\\backend\\backend.csproj",
+        "projectName": "backend",
+        "projectPath": "C:\\hqt\\seminar\\Sport-Management\\backend\\backend.csproj",
+        "packagesPath": "C:\\Users\\huyen\\.nuget\\packages\\",
+        "outputPath": "C:\\hqt\\seminar\\Sport-Management\\backend\\obj\\",
+>>>>>>> 9723f73c05cc39a53d00aebb600304c75f5d37cf
         "projectStyle": "PackageReference",
         "fallbackFolders": [
           "C:\\Program Files (x86)\\Microsoft Visual Studio\\Shared\\NuGetPackages"
         ],
         "configFilePaths": [
+<<<<<<< HEAD
           "C:\\Users\\84328\\AppData\\Roaming\\NuGet\\NuGet.Config",
           "C:\\Program Files (x86)\\NuGet\\Config\\Microsoft.VisualStudio.FallbackLocation.config",
+=======
+          "C:\\Users\\huyen\\AppData\\Roaming\\NuGet\\NuGet.Config",
+>>>>>>> 9723f73c05cc39a53d00aebb600304c75f5d37cf
           "C:\\Program Files (x86)\\NuGet\\Config\\Microsoft.VisualStudio.Offline.config"
         ],
         "originalTargetFrameworks": [
@@ -44,7 +62,7 @@
           "auditLevel": "low",
           "auditMode": "direct"
         },
-        "SdkAnalysisLevel": "10.0.100"
+        "SdkAnalysisLevel": "9.0.300"
       },
       "frameworks": {
         "net9.0": {
@@ -118,7 +136,7 @@
               "privateAssets": "all"
             }
           },
-          "runtimeIdentifierGraphPath": "C:\\Program Files\\dotnet\\sdk\\10.0.101/PortableRuntimeIdentifierGraph.json"
+          "runtimeIdentifierGraphPath": "C:\\Program Files\\dotnet\\sdk\\9.0.308/PortableRuntimeIdentifierGraph.json"
         }
       }
     }
