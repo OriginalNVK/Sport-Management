@@ -7,7 +7,8 @@ import {
   CreditCard, 
   UserCircle,
   LogOut,
-  Briefcase
+  Briefcase,
+  BarChart3
 } from 'lucide-react';
 import type { PageType } from '../App';
 import type { UserRole } from '../App';
@@ -29,7 +30,7 @@ export function Sidebar({ currentPage, onPageChange, userRole, userEmail, onLogo
     { id: 'booking' as PageType, label: 'Booking', icon: Calendar },
     { id: 'services' as PageType, label: 'Service Management', icon: Wrench },
     { id: 'payment' as PageType, label: 'Payment', icon: CreditCard },
-    { id: 'profile' as PageType, label: 'Profile', icon: UserCircle },
+    { id: 'profile' as PageType, label: 'Profile', icon: UserCircle }
   ];
 
   // Menu items for customer role

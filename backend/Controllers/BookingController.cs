@@ -1,5 +1,7 @@
 using backend.DTOs;
 using backend.Services;
+using backend.Data; 
+using Microsoft.EntityFrameworkCore;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
@@ -10,14 +12,21 @@ namespace backend.Controllers;
 [Produces("application/json")]
 public class BookingsController : ControllerBase
 {
+	  private readonly SportContext _context;
+
     private readonly IBookingService _bookingService;
     private readonly ILogger<BookingsController> _logger;
 
-    public BookingsController(IBookingService bookingService, ILogger<BookingsController> logger)
-    {
-        _bookingService = bookingService;
-        _logger = logger;
-    }
+    public BookingsController(
+    IBookingService bookingService,
+    ILogger<BookingsController> logger,
+    SportContext context)
+{
+    _bookingService = bookingService;
+    _logger = logger;
+    _context = context ?? throw new ArgumentNullException(nameof(context));
+}
+
 
     // 1) Check sân trống theo ngày/giờ
     [HttpPost("check-availability")]
@@ -47,10 +56,38 @@ public class BookingsController : ControllerBase
             return StatusCode(500, new { success = false, message = "Đã xảy ra lỗi khi kiểm tra sân trống" });
         }
     }
+		[HttpGet("price")]
+		public async Task<IActionResult> GetPrice([FromQuery] int maLoai, [FromQuery] string loaiNgay, [FromQuery] string khungGio)
+		{
+				loaiNgay = (loaiNgay ?? "").Trim().ToLower();
+				khungGio = (khungGio ?? "").Trim().ToLower();
+
+				if (maLoai <= 0)
+						return BadRequest(new { success = false, message = "maLoai không hợp lệ" });
+
+				if (loaiNgay is not ("thuong" or "cuoi_tuan" or "le"))
+						return BadRequest(new { success = false, message = "loaiNgay không hợp lệ" });
+
+				if (khungGio is not ("sang" or "chieu" or "toi"))
+						return BadRequest(new { success = false, message = "khungGio không hợp lệ" });
+
+				var gia = await _context.BangGiums
+						.AsNoTracking()
+						.Where(x =>
+								x.MaLoai == maLoai &&
+								(x.LoaiNgay ?? "").ToLower() == loaiNgay &&
+								(x.KhungGio ?? "").ToLower() == khungGio
+						)
+						.Select(x => (decimal?)x.Gia)   // để phân biệt null/not found
+						.FirstOrDefaultAsync();
+
+				if (gia == null)
+						return NotFound(new { success = false, message = "Không tìm thấy giá phù hợp" });
+
+				return Ok(new { success = true, data = new { gia } });
+		}
 
     // 2) Tạo phiếu đặt sân + ghi lịch đặt
-    // Nếu bạn có JWT: bật Authorize và lấy username từ token
-    // [Authorize]
     [HttpPost]
     [ProducesResponseType(StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]

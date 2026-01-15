@@ -164,3 +164,19 @@ VALUES
 INSERT INTO lich_hlv (ma_phieu, ma_hlv, gio_bat_dau, gio_ket_thuc, don_gia, thanh_tien)
 VALUES
 (1, 1, '08:00', '09:00', 150000, 150000);
+
+-- extra data
+INSERT INTO co_so (ten_co_so, thanh_pho, dia_chi, sdt)
+VALUES 
+(N'ViệtSport Mỹ Tho', N'Mỹ Tho', N'160-6 Trần Hưng Đạo', '0829929972'),
+(N'ViệtSport Nha Trang', N'Nha Trang', N'111 Lê Hồng phong', '0944243816'),
+(N'ViệtSport Đà Lạt', N'Đà Lạt', N'222 Hồ Tùng Mậu', '0838345567');
+
+INSERT INTO san(ma_san, ma_co_so, ma_loai, ten_san, tinh_trang, suc_chua)
+VALUES
+(7, 4, 1, N'Sân cầu lông 1', 'hoat_dong', 20),
+(8, 4, 2, N'Sân bóng rổ 1', 'bao_tri', 20),
+(9, 5, 3, N'Sân tennis 1', 'hoat_dong', 50),
+(10, 5, 4, N'Sân bóng đá 1', 'bao_tri', 20),
+(11, 6, 4, N'Sân bóng đá 1', 'hoat_dong', 20),
+(12, 6, 1, N'Sân cầu lông 1', 'bao_tri', 20);

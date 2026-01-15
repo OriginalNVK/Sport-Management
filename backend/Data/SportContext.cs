@@ -15,7 +15,7 @@ public partial class SportContext : DbContext
     {
     }
 
-    public virtual DbSet<BangGium> BangGia { get; set; }
+    public virtual DbSet<BangGium> BangGiums { get; set; }
 
     public virtual DbSet<BaoCao> BaoCaos { get; set; }
 

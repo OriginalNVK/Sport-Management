@@ -1,25 +1,25 @@
-import { useState } from 'react';
-import { Mail, Lock, LogIn, Building2 } from 'lucide-react';
-import { Card, CardContent, CardHeader, CardTitle } from './ui/card';
-import { Input } from './ui/input';
-import { Button } from './ui/button';
-import { Label } from './ui/label';
-import { authService } from '../services/AuthService';
+import { useState } from "react";
+import { Mail, Lock, LogIn, Building2 } from "lucide-react";
+import { Card, CardContent, CardHeader, CardTitle } from "./ui/card";
+import { Input } from "./ui/input";
+import { Button } from "./ui/button";
+import { Label } from "./ui/label";
+import { authService } from "../services/AuthService";
 
 interface LoginProps {
-  onLogin: (email: string, role: 'customer' | 'manager') => void;
+  onLogin: (email: string, role: "customer" | "manager" | "receptionist" | "staff") => void;
   onShowRegister?: () => void;
 }
 
 export function Login({ onLogin, onShowRegister }: LoginProps) {
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
-  const [error, setError] = useState('');
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [error, setError] = useState("");
   const [isLoading, setIsLoading] = useState(false);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setError('');
+    setError("");
     setIsLoading(true);
 
     try {
@@ -29,14 +29,17 @@ export function Login({ onLogin, onShowRegister }: LoginProps) {
       });
 
       // Xác định role dựa trên vaiTro từ backend
-      let role: 'customer' | 'manager' = 'customer';
-      if (response.vaiTro === 'quan_ly' || response.vaiTro === 'admin') {
-        role = 'manager';
+      let role: "customer" | "manager" | "receptionist" | "staff" = "customer";
+      if (response.vaiTro === "quan_ly" || response.vaiTro === "admin") {
+        role = "manager";
+      } else if (response.vaiTro === "le_tan") {
+        role = "receptionist";
+      } else if (response.vaiTro === "nhan_vien") {
+        role = "staff";
       }
-
       onLogin(email, role);
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Đăng nhập thất bại');
+      setError(err instanceof Error ? err.message : "Đăng nhập thất bại");
     } finally {
       setIsLoading(false);
     }
@@ -56,51 +59,31 @@ export function Login({ onLogin, onShowRegister }: LoginProps) {
         </CardHeader>
         <CardContent>
           <form onSubmit={handleSubmit} className="space-y-6">
-            {error && (
-              <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg text-sm">
-                {error}
-              </div>
-            )}
+            {error && <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg text-sm">{error}</div>}
 
             <div className="space-y-2">
-              <Label htmlFor="email" className="text-gray-700">Email Address</Label>
+              <Label htmlFor="email" className="text-gray-700">
+                Email Address
+              </Label>
               <div className="relative">
                 <Mail className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400" />
-                <Input
-                  id="email"
-                  type="email"
-                  placeholder="Enter your email"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  className="pl-10"
-                  required
-                />
+                <Input id="email" type="email" placeholder="Enter your email" value={email} onChange={(e) => setEmail(e.target.value)} className="pl-10" required />
               </div>
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="password" className="text-gray-700">Password</Label>
+              <Label htmlFor="password" className="text-gray-700">
+                Password
+              </Label>
               <div className="relative">
                 <Lock className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400" />
-                <Input
-                  id="password"
-                  type="password"
-                  placeholder="Enter your password"
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  className="pl-10"
-                  required
-                />
+                <Input id="password" type="password" placeholder="Enter your password" value={password} onChange={(e) => setPassword(e.target.value)} className="pl-10" required />
               </div>
             </div>
 
-            <Button
-              type="submit"
-              className="w-full bg-blue-600 hover:bg-blue-700 text-white py-6 text-lg"
-              disabled={isLoading}
-            >
+            <Button type="submit" className="w-full bg-blue-600 hover:bg-blue-700 text-white py-6 text-lg" disabled={isLoading}>
               {isLoading ? (
-                'Signing in...'
+                "Signing in..."
               ) : (
                 <>
                   <LogIn className="w-5 h-5 mr-2" />
@@ -112,12 +95,8 @@ export function Login({ onLogin, onShowRegister }: LoginProps) {
 
           <div className="mt-8 pt-6 border-t border-gray-200">
             <p className="text-sm text-gray-600 text-center">
-              Don't have an account?{' '}
-              <button
-                type="button"
-                onClick={onShowRegister}
-                className="text-blue-600 hover:text-blue-700 font-semibold"
-              >
+              Don't have an account?{" "}
+              <button type="button" onClick={onShowRegister} className="text-blue-600 hover:text-blue-700 font-semibold">
                 Register now
               </button>
             </p>
