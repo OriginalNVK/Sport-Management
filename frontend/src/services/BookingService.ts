@@ -33,6 +33,7 @@ export type CheckFieldAvailabilityRequest = {
 export type CreateBookingRequest = {
   maKh: number;
   maSan: number;
+  nguoiTaoPhieu?: number | null;
   ngayDat: string; // YYYY-MM-DD
   gioBatDau: string; // HH:mm
   gioKetThuc: string; // HH:mm
@@ -66,6 +67,12 @@ type ApiWrap<T> = { success: boolean; message?: string; data: T };
 export async function checkAvailability(body: CheckFieldAvailabilityRequest) {
   const res = await axios.post<ApiWrap<{ isAvailable: boolean }>>(`${API_BASE}/bookings/check-availability`, body);
   return res.data;
+}
+
+export function getGia(maLoai: number, loaiNgay: string, khungGio: string) {
+  return axios.get(`${API_BASE}/bookings/price`, {
+    params: { maLoai, loaiNgay, khungGio },
+  });
 }
 
 export async function createBooking(body: CreateBookingRequest, token?: string) {

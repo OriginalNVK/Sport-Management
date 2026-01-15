@@ -7,7 +7,7 @@ import { Label } from "./ui/label";
 import { authService } from "../services/AuthService";
 
 interface LoginProps {
-  onLogin: (email: string, role: "customer" | "manager") => void;
+  onLogin: (email: string, role: "customer" | "manager" | "receptionist" | "staff") => void;
   onShowRegister?: () => void;
 }
 
@@ -29,11 +29,14 @@ export function Login({ onLogin, onShowRegister }: LoginProps) {
       });
 
       // Xác định role dựa trên vaiTro từ backend
-      let role: "customer" | "manager" = "customer";
+      let role: "customer" | "manager" | "receptionist" | "staff" = "customer";
       if (response.vaiTro === "quan_ly" || response.vaiTro === "admin") {
         role = "manager";
+      } else if (response.vaiTro === "le_tan") {
+        role = "receptionist";
+      } else if (response.vaiTro === "nhan_vien") {
+        role = "staff";
       }
-
       onLogin(email, role);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Đăng nhập thất bại");
