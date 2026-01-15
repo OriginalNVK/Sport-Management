@@ -21,7 +21,6 @@ public class BookingExtrasService : IBookingExtrasService
 
         // 1) booking tồn tại?
         var phieu = await _db.PhieuDatSans
-            .AsNoTracking()
             .FirstOrDefaultAsync(x => x.MaPhieu == req.ma_phieu);
 
         if (phieu == null) throw new InvalidOperationException("Không tìm thấy phiếu đặt sân.");
@@ -62,6 +61,8 @@ public class BookingExtrasService : IBookingExtrasService
 
         var donGia = dv.DonGia ?? 0m;
         var thanhTien = donGia * req.so_luong;
+
+        phieu.TongTien += thanhTien;
 
         var ct = new ChiTietDv
         {
@@ -206,7 +207,7 @@ public class BookingExtrasService : IBookingExtrasService
         if (ct == null) return false;
 
         // Hoàn tồn nếu có tồn kho theo cơ sở
-        var phieu = await _db.PhieuDatSans.AsNoTracking().FirstOrDefaultAsync(x => x.MaPhieu == ct.MaPhieu);
+        var phieu = await _db.PhieuDatSans.FirstOrDefaultAsync(x => x.MaPhieu == ct.MaPhieu);
         if (phieu == null) throw new InvalidOperationException("Phiếu đặt không tồn tại.");
 
         var maCoSo = await _db.Sans.Where(s => s.MaSan == phieu.MaSan).Select(s => s.MaCoSo).FirstOrDefaultAsync();
@@ -217,7 +218,9 @@ public class BookingExtrasService : IBookingExtrasService
             ton.SoLuongTon += ct.SoLuong.Value;
             ton.NgayCapNhat = DateTime.UtcNow;
         }
-
+        // Giảm tổng tiền của phiếu
+        phieu.TongTien -= ct.ThanhTien ?? 0m;
+        
         _db.ChiTietDvs.Remove(ct);
         await _db.SaveChangesAsync();
         await tx.CommitAsync();

@@ -4495,47 +4495,24 @@
     ]
   },
   "packageFolders": {
-<<<<<<< HEAD
-    "C:\\Users\\84328\\.nuget\\packages\\": {},
-    "C:\\Program Files (x86)\\Microsoft Visual Studio\\Shared\\NuGetPackages": {}
-=======
-    "C:\\Users\\huyen\\.nuget\\packages\\": {}
->>>>>>> 9723f73c05cc39a53d00aebb600304c75f5d37cf
+    "C:\\Users\\ADMIN\\.nuget\\packages\\": {}
   },
   "project": {
     "version": "1.0.0",
     "restore": {
-<<<<<<< HEAD
-      "projectUniqueName": "D:\\Hoccode\\Sport\\Sport-Management\\backend\\backend.csproj",
+      "projectUniqueName": "D:\\KHTN\\Hệ quản trị CSDL\\Sport-Management\\backend\\backend.csproj",
       "projectName": "backend",
-      "projectPath": "D:\\Hoccode\\Sport\\Sport-Management\\backend\\backend.csproj",
-      "packagesPath": "C:\\Users\\84328\\.nuget\\packages\\",
-      "outputPath": "D:\\Hoccode\\Sport\\Sport-Management\\backend\\obj\\",
-=======
-      "projectUniqueName": "C:\\hqt\\seminar\\Sport-Management\\backend\\backend.csproj",
-      "projectName": "backend",
-      "projectPath": "C:\\hqt\\seminar\\Sport-Management\\backend\\backend.csproj",
-      "packagesPath": "C:\\Users\\huyen\\.nuget\\packages\\",
-      "outputPath": "C:\\hqt\\seminar\\Sport-Management\\backend\\obj\\",
->>>>>>> 9723f73c05cc39a53d00aebb600304c75f5d37cf
+      "projectPath": "D:\\KHTN\\Hệ quản trị CSDL\\Sport-Management\\backend\\backend.csproj",
+      "packagesPath": "C:\\Users\\ADMIN\\.nuget\\packages\\",
+      "outputPath": "D:\\KHTN\\Hệ quản trị CSDL\\Sport-Management\\backend\\obj\\",
       "projectStyle": "PackageReference",
-      "fallbackFolders": [
-        "C:\\Program Files (x86)\\Microsoft Visual Studio\\Shared\\NuGetPackages"
-      ],
       "configFilePaths": [
-<<<<<<< HEAD
-        "C:\\Users\\84328\\AppData\\Roaming\\NuGet\\NuGet.Config",
-        "C:\\Program Files (x86)\\NuGet\\Config\\Microsoft.VisualStudio.FallbackLocation.config",
-=======
-        "C:\\Users\\huyen\\AppData\\Roaming\\NuGet\\NuGet.Config",
->>>>>>> 9723f73c05cc39a53d00aebb600304c75f5d37cf
-        "C:\\Program Files (x86)\\NuGet\\Config\\Microsoft.VisualStudio.Offline.config"
+        "C:\\Users\\ADMIN\\AppData\\Roaming\\NuGet\\NuGet.Config"
       ],
       "originalTargetFrameworks": [
         "net9.0"
       ],
       "sources": {
-        "C:\\Program Files (x86)\\Microsoft SDKs\\NuGetPackages\\": {},
         "https://api.nuget.org/v3/index.json": {}
       },
       "frameworks": {
@@ -4554,7 +4531,7 @@
         "auditLevel": "low",
         "auditMode": "direct"
       },
-      "SdkAnalysisLevel": "9.0.300"
+      "SdkAnalysisLevel": "10.0.100"
     },
     "frameworks": {
       "net9.0": {
@@ -4602,24 +4579,6 @@
         ],
         "assetTargetFallback": true,
         "warn": true,
-        "downloadDependencies": [
-          {
-            "name": "Microsoft.AspNetCore.App.Ref",
-            "version": "[9.0.11, 9.0.11]"
-          },
-          {
-            "name": "Microsoft.NETCore.App.Host.win-x64",
-            "version": "[9.0.11, 9.0.11]"
-          },
-          {
-            "name": "Microsoft.NETCore.App.Ref",
-            "version": "[9.0.11, 9.0.11]"
-          },
-          {
-            "name": "Microsoft.WindowsDesktop.App.Ref",
-            "version": "[9.0.11, 9.0.11]"
-          }
-        ],
         "frameworkReferences": {
           "Microsoft.AspNetCore.App": {
             "privateAssets": "none"
@@ -4628,8 +4587,16 @@
             "privateAssets": "all"
           }
         },
-        "runtimeIdentifierGraphPath": "C:\\Program Files\\dotnet\\sdk\\9.0.308/PortableRuntimeIdentifierGraph.json"
+        "runtimeIdentifierGraphPath": "C:\\Program Files\\dotnet\\sdk\\10.0.101/PortableRuntimeIdentifierGraph.json"
       }
     }
-  }
+  },
+  "logs": [
+    {
+      "code": "Undefined",
+      "level": "Warning",
+      "warningLevel": 1,
+      "message": "Problem reading the cache file D:\\KHTN\\Hệ quản trị CSDL\\Sport-Management\\backend\\obj\\project.nuget.cache : '<' is an invalid start of a property name. Expected a '\"'. Path: $ | LineNumber: 2 | BytePositionInLine: 0."
+    }
+  ]
 }

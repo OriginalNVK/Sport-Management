@@ -7,6 +7,7 @@ import type { UserRole } from '../App';
 import type { PageType } from '../App';
 import { bookingExtraService, type ServiceInfoResponse } from '../services/BookingExtraService';
 import { invoiceService, type InvoiceResponse } from '../services/InvoiceService';
+import { getBookingsByCustomer} from '../services/BookingService';
 
 
 const categories = ['All', 'bong', 'trang_phuc', 'do_uong', 'huan_luyen_vien'];
@@ -43,7 +44,7 @@ export function ServiceManagement({ userRole, onNavigate }: ServiceManagementPro
   const [qtyByService, setQtyByService] = useState<Record<number, number>>({});
 
   // 🔹 đang submit booking cho service nào
-  const [bookingId, setBookingId] = useState<number | null>(null);
+  // const [bookingId, setBookingId] = useState<number | null>(null);
 
   // 🔹 lấy số lượng (mặc định = 1)
   const getQty = (maDv: number) => qtyByService[maDv] ?? 0;
@@ -67,8 +68,8 @@ const selectedItems = useMemo(() => {
     .filter((x) => x.soLuong > 0);
 }, [services, qtyByService]);
 
-  const [invoices, setInvoices] = useState<InvoiceResponse[]>([]);
-  const [selectedInvoiceId, setSelectedInvoiceId] = useState<number | ''>('');
+  const [bookings, setBookings] = useState<InvoiceResponse[]>([]);
+  const [selectedPhieuId, setSelectedPhieuId] = useState<number | ''>('');
   const [batchLoading, setBatchLoading] = useState(false);
 
 
@@ -105,20 +106,22 @@ const selectedItems = useMemo(() => {
 
   (async () => {
     try {
-      const list = await invoiceService.getInvoicesByCustomer(maKh);
-      setInvoices(list);
-      if (list.length > 0) setSelectedInvoiceId(list[0].maHd);
+      const res = await getBookingsByCustomer(maKh);
+      const list = Array.isArray(res) ? res : (res as any)?.data ?? [];
+      setBookings(list);
+
+      if (list.length > 0) setSelectedPhieuId(list[0].maPhieu);
     } catch (e) {
       console.error(e);
     }
   })();
 }, [userRole]);
 
-
+ console.log('bookings',  bookings);
   const filteredServices = filter === 'All' 
     ? services 
     : services.filter(s => s.loaiDv === filter);
-  console.log('filteredServices', filteredServices);
+  // console.log('filteredServices', filteredServices);
 
   if (loading) {
     return (
@@ -139,29 +142,62 @@ const selectedItems = useMemo(() => {
     );
   }
 
-  const handleBooking = () => {
+  // const handleBooking = () => {
+  //   onNavigate('payment');
+  // };
+  const handleBookAllServices = async () => {
+  if (!selectedPhieuId) {
+    alert('Vui lòng chọn phiếu đặt sân');
+    return;
+  }
+
+  if (selectedItems.length === 0) {
+    alert('Vui lòng nhập số lượng ít nhất 1 dịch vụ');
+    return;
+  }
+
+  try {
+    setBatchLoading(true);
+
+    await bookingExtraService.addManyServicesToPhieu({
+      ma_phieu: Number(selectedPhieuId),
+      items: selectedItems.map((it) => ({
+        ma_dv: it.maDv,
+        so_luong: it.soLuong,
+      })),
+    });
+
+    // (tuỳ bạn) reset lại số lượng về 0 sau khi add thành công
+    setQtyByService({});
+
+    // chuyển trang payment
     onNavigate('payment');
-  };
+  } catch (e: any) {
+    alert(e?.message || 'Thêm dịch vụ thất bại');
+  } finally {
+    setBatchLoading(false);
+  }
+};
+
 
   // Customer View - Available Services
   if (userRole === 'customer') {
     return (
       <div className="p-8">
-        <h1 className="mb-8 text-gray-800">Available Services</h1>
+        {/* <h1 className="mb-8 text-gray-800">Available Services</h1> */}
         <div className="mb-6 flex flex-wrap items-center gap-3">
   <div className="flex items-center gap-2">
-    <span className="text-gray-600">Chọn hóa đơn:</span>
+    <span className="text-gray-600">Chọn phiếu đặt:</span>
 
     <select
-      value={selectedInvoiceId}
-      onChange={(e) => setSelectedInvoiceId(Number(e.target.value))}
+      value={selectedPhieuId}
+      onChange={(e) => setSelectedPhieuId(Number(e.target.value))}
       className="border border-gray-300 rounded-md px-3 py-2 bg-white"
     >
-      {invoices.length === 0 && <option value="">(Chưa có hóa đơn)</option>}
-
-      {invoices.map((inv) => (
-        <option key={inv.maHd} value={inv.maHd}>
-          #{inv.maHd} - Phiếu {inv.maPhieu} - {inv.tinhTrangTt ?? 'chua_tt'}
+      {bookings.length === 0 && <option value="">(Chưa có hóa đơn)</option>}
+      {bookings.map((inv) => (
+        <option key={inv.maPhieu} value={inv.maPhieu}>
+          # - Phiếu {inv.maPhieu} - Sân {inv.maSan} - Ngày {inv.ngayDat} - Giờ bắt đầu: {inv.gioBatDau} - Giờ kết thúc: {inv.gioKetThuc} - Trạng thái: {inv.tinhTrangTt === 'chua_tt' ? 'Chưa thanh toán' : inv.tinhTrangTt === 'da_tt' ? 'Đã thanh toán' : 'Hoàn tiền'}
         </option>
       ))}
     </select>
@@ -256,10 +292,10 @@ const selectedItems = useMemo(() => {
         </div>
           <div className="mt-6 flex justify-end">
   <button
-    onClick={handleBooking}
-    disabled={batchLoading || !selectedInvoiceId || selectedItems.length === 0}
+    onClick={handleBookAllServices}
+    disabled={batchLoading || !selectedPhieuId || selectedItems.length === 0}
     className={`px-6 py-3 rounded-lg text-white transition-colors ${
-      batchLoading || !selectedInvoiceId || selectedItems.length === 0
+      batchLoading || !selectedPhieuId || selectedItems.length === 0
         ? 'bg-blue-400 cursor-not-allowed'
         : 'bg-blue-600 hover:bg-blue-700'
     }`}
