@@ -8,7 +8,9 @@ import {
   UserCircle,
   LogOut,
   Briefcase,
-  BarChart3
+  BarChart3,
+  Clock,
+  FileText
 } from 'lucide-react';
 import type { PageType } from '../App';
 import type { UserRole } from '../App';
@@ -26,6 +28,8 @@ export function Sidebar({ currentPage, onPageChange, userRole, userEmail, onLogo
   const managerMenuItems = [
     { id: 'dashboard' as PageType, label: 'Dashboard', icon: LayoutDashboard },
     { id: 'users' as PageType, label: 'User Management', icon: Users },
+    { id: 'shifts' as PageType, label: 'Shift Management', icon: Clock },
+    { id: 'leave-requests' as PageType, label: 'Leave Requests', icon: FileText },
     { id: 'stadiums' as PageType, label: 'Stadium Management', icon: Building2 },
     { id: 'booking' as PageType, label: 'Booking', icon: Calendar },
     { id: 'services' as PageType, label: 'Service Management', icon: Wrench },

@@ -9,7 +9,9 @@ import { Booking } from './components/Booking';
 import { ServiceManagement } from './components/ServiceManagement';
 import { Payment } from './components/Payment';
 import { Profile } from './components/Profile';
-export type PageType = 'dashboard' | 'users' | 'stadiums' | 'booking' | 'services' | 'payment' | 'profile';
+import { ShiftManagement } from './components/ShiftManagement';
+import { LeaveRequestManagement } from './components/LeaveRequestManagement';
+export type PageType = 'dashboard' | 'users' | 'stadiums' | 'booking' | 'services' | 'payment' | 'profile' | 'shifts' | 'leave-requests';
 export type UserRole = 'customer' | 'manager';
 
 export default function App() {
@@ -60,6 +62,10 @@ export default function App() {
         return <Payment userRole={userRole} />;
       case 'profile':
         return <Profile userEmail={userEmail} userRole={userRole} />;
+      case 'shifts':
+        return <ShiftManagement />;
+      case 'leave-requests':
+        return <LeaveRequestManagement />;
       default:
         return <Dashboard userRole={userRole} />;
     }

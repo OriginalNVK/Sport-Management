@@ -24,6 +24,10 @@ public class LeaveService : ILeaveService
         {
             var leaveRequests = await _context.DonNghiPheps
                 .Include(d => d.MaNvNavigation)
+                .ToListAsync();
+
+            return leaveRequests
+                .OrderByDescending(d => d.NgayNghi)
                 .Select(d => new LeaveRequestDto
                 {
                     MaDon = d.MaDon,
@@ -34,10 +38,7 @@ public class LeaveService : ILeaveService
                     LyDo = d.LyDo,
                     TrangThai = d.TrangThai
                 })
-                .OrderByDescending(d => d.NgayNghi)
-                .ToListAsync();
-
-            return leaveRequests;
+                .ToList();
         }
         catch (Exception ex)
         {

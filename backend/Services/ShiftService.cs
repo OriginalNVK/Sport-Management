@@ -26,6 +26,11 @@ public class ShiftService : IShiftService
         {
             var shifts = await _context.CaTrucs
                 .Include(ct => ct.MaCoSoNavigation)
+                .ToListAsync();
+
+            return shifts
+                .OrderBy(ct => ct.Ngay)
+                .ThenBy(ct => ct.GioBatDau)
                 .Select(ct => new ShiftDto
                 {
                     MaCa = ct.MaCa,
@@ -36,11 +41,7 @@ public class ShiftService : IShiftService
                     GioKetThuc = ct.GioKetThuc.HasValue ? ct.GioKetThuc.Value.ToTimeSpan() : default,
                     TenCa = ct.TenCa
                 })
-                .OrderBy(ct => ct.Ngay)
-                .ThenBy(ct => ct.GioBatDau)
-                .ToListAsync();
-
-            return shifts;
+                .ToList();
         }
         catch (Exception ex)
         {
@@ -84,6 +85,11 @@ public class ShiftService : IShiftService
             var shifts = await _context.CaTrucs
                 .Include(ct => ct.MaCoSoNavigation)
                 .Where(ct => ct.MaCoSo == maCoSo)
+                .ToListAsync();
+
+            return shifts
+                .OrderBy(ct => ct.Ngay)
+                .ThenBy(ct => ct.GioBatDau)
                 .Select(ct => new ShiftDto
                 {
                     MaCa = ct.MaCa,
@@ -94,11 +100,7 @@ public class ShiftService : IShiftService
                     GioKetThuc = ct.GioKetThuc.HasValue ? ct.GioKetThuc.Value.ToTimeSpan() : default,
                     TenCa = ct.TenCa
                 })
-                .OrderBy(ct => ct.Ngay)
-                .ThenBy(ct => ct.GioBatDau)
-                .ToListAsync();
-
-            return shifts;
+                .ToList();
         }
         catch (Exception ex)
         {
@@ -114,6 +116,10 @@ public class ShiftService : IShiftService
             var shifts = await _context.CaTrucs
                 .Include(ct => ct.MaCoSoNavigation)
                 .Where(ct => ct.Ngay.HasValue && ct.Ngay.Value == DateOnly.FromDateTime(date))
+                .ToListAsync();
+
+            return shifts
+                .OrderBy(ct => ct.GioBatDau)
                 .Select(ct => new ShiftDto
                 {
                     MaCa = ct.MaCa,
@@ -124,10 +130,7 @@ public class ShiftService : IShiftService
                     GioKetThuc = ct.GioKetThuc.HasValue ? ct.GioKetThuc.Value.ToTimeSpan() : default,
                     TenCa = ct.TenCa
                 })
-                .OrderBy(ct => ct.GioBatDau)
-                .ToListAsync();
-
-            return shifts;
+                .ToList();
         }
         catch (Exception ex)
         {
@@ -267,6 +270,11 @@ public class ShiftService : IShiftService
                 .Include(pc => pc.MaNvNavigation)
                 .Include(pc => pc.MaCaNavigation)
                 .ThenInclude(ca => ca.MaCoSoNavigation)
+                .ToListAsync();
+
+            return assignments
+                .OrderBy(pc => pc.MaCaNavigation?.Ngay)
+                .ThenBy(pc => pc.MaCaNavigation?.GioBatDau)
                 .Select(pc => new ShiftAssignmentDto
                 {
                     MaPc = pc.MaPc,
@@ -284,13 +292,8 @@ public class ShiftService : IShiftService
                     GioKetThuc = pc.MaCaNavigation != null && pc.MaCaNavigation.GioKetThuc.HasValue
                         ? pc.MaCaNavigation.GioKetThuc.Value.ToTimeSpan()
                         : null,
-
                 })
-                .OrderBy(pc => pc.Ngay)
-                .ThenBy(pc => pc.GioBatDau)
-                .ToListAsync();
-
-            return assignments;
+                .ToList();
         }
         catch (Exception ex)
         {
@@ -307,6 +310,11 @@ public class ShiftService : IShiftService
                 .Include(pc => pc.MaNvNavigation)
                 .Include(pc => pc.MaCaNavigation)
                 .Where(pc => pc.MaNv == maNv)
+                .ToListAsync();
+
+            return assignments
+                .OrderBy(pc => pc.MaCaNavigation?.Ngay)
+                .ThenBy(pc => pc.MaCaNavigation?.GioBatDau)
                 .Select(pc => new ShiftAssignmentDto
                 {
                     MaPc = pc.MaPc,
@@ -325,11 +333,7 @@ public class ShiftService : IShiftService
                         ? pc.MaCaNavigation.GioKetThuc.Value.ToTimeSpan()
                         : null,
                 })
-                .OrderBy(pc => pc.Ngay)
-                .ThenBy(pc => pc.GioBatDau)
-                .ToListAsync();
-
-            return assignments;
+                .ToList();
         }
         catch (Exception ex)
         {
@@ -346,6 +350,9 @@ public class ShiftService : IShiftService
                 .Include(pc => pc.MaNvNavigation)
                 .Include(pc => pc.MaCaNavigation)
                 .Where(pc => pc.MaCa == maCa)
+                .ToListAsync();
+
+            return assignments
                 .Select(pc => new ShiftAssignmentDto
                 {
                     MaPc = pc.MaPc,
@@ -364,9 +371,7 @@ public class ShiftService : IShiftService
                         ? pc.MaCaNavigation.GioKetThuc.Value.ToTimeSpan()
                         : null,
                 })
-                .ToListAsync();
-
-            return assignments;
+                .ToList();
         }
         catch (Exception ex)
         {
