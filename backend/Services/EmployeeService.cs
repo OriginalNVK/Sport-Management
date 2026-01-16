@@ -29,10 +29,10 @@ public class EmployeeService : IEmployeeService
                 .Select(nv => new EmployeeDto
                 {
                     MaNv = nv.MaNv,
-                    MaCoSo = nv.MaCoSo,
+                    MaCoSo = nv.MaCoSo ?? 0,
                     TenCoSo = nv.MaCoSoNavigation != null ? nv.MaCoSoNavigation.TenCoSo : null,
                     HoTen = nv.HoTen,
-                    NgaySinh = nv.NgaySinh,
+                    NgaySinh = nv.NgaySinh.HasValue ? nv.NgaySinh.Value.ToDateTime(TimeOnly.MinValue) : (DateTime?)null,
                     GioiTinh = nv.GioiTinh,
                     CmndCccd = nv.CmndCccd,
                     Sdt = nv.Sdt,
@@ -67,10 +67,10 @@ public class EmployeeService : IEmployeeService
                 .Select(nv => new EmployeeDto
                 {
                     MaNv = nv.MaNv,
-                    MaCoSo = nv.MaCoSo,
+                    MaCoSo = nv.MaCoSo ?? 0,
                     TenCoSo = nv.MaCoSoNavigation != null ? nv.MaCoSoNavigation.TenCoSo : null,
                     HoTen = nv.HoTen,
-                    NgaySinh = nv.NgaySinh,
+                    NgaySinh = nv.NgaySinh.HasValue ? nv.NgaySinh.Value.ToDateTime(TimeOnly.MinValue) : (DateTime?)null,
                     GioiTinh = nv.GioiTinh,
                     CmndCccd = nv.CmndCccd,
                     Sdt = nv.Sdt,
@@ -105,10 +105,10 @@ public class EmployeeService : IEmployeeService
                 .Select(nv => new EmployeeDto
                 {
                     MaNv = nv.MaNv,
-                    MaCoSo = nv.MaCoSo,
+                    MaCoSo = nv.MaCoSo ?? 0,
                     TenCoSo = nv.MaCoSoNavigation != null ? nv.MaCoSoNavigation.TenCoSo : null,
                     HoTen = nv.HoTen,
-                    NgaySinh = nv.NgaySinh,
+                    NgaySinh = nv.NgaySinh.HasValue ? nv.NgaySinh.Value.ToDateTime(TimeOnly.MinValue) : (DateTime?)null,
                     GioiTinh = nv.GioiTinh,
                     CmndCccd = nv.CmndCccd,
                     Sdt = nv.Sdt,
@@ -163,7 +163,7 @@ public class EmployeeService : IEmployeeService
                 MaNv = newMaNv,
                 MaCoSo = request.MaCoSo,
                 HoTen = request.HoTen,
-                NgaySinh = request.NgaySinh,
+                NgaySinh = request.NgaySinh.HasValue ? DateOnly.FromDateTime(request.NgaySinh.Value) : (DateOnly?)null,
                 GioiTinh = request.GioiTinh,
                 CmndCccd = request.CmndCccd,
                 Sdt = request.Sdt,
@@ -228,7 +228,7 @@ public class EmployeeService : IEmployeeService
                 employee.HoTen = request.HoTen;
 
             if (request.NgaySinh.HasValue)
-                employee.NgaySinh = request.NgaySinh;
+                employee.NgaySinh = DateOnly.FromDateTime(request.NgaySinh.Value);
 
             if (!string.IsNullOrEmpty(request.GioiTinh))
                 employee.GioiTinh = request.GioiTinh;
