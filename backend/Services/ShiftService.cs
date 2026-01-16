@@ -29,11 +29,11 @@ public class ShiftService : IShiftService
                 .Select(ct => new ShiftDto
                 {
                     MaCa = ct.MaCa,
-                    MaCoSo = ct.MaCoSo,
+                    MaCoSo = ct.MaCoSo ?? 0,
                     TenCoSo = ct.MaCoSoNavigation != null ? ct.MaCoSoNavigation.TenCoSo : null,
-                    Ngay = ct.Ngay,
-                    GioBatDau = ct.GioBatDau,
-                    GioKetThuc = ct.GioKetThuc,
+                    Ngay = ct.Ngay.HasValue ? ct.Ngay.Value.ToDateTime(TimeOnly.MinValue) : default,
+                    GioBatDau = ct.GioBatDau.HasValue ? ct.GioBatDau.Value.ToTimeSpan() : default,
+                    GioKetThuc = ct.GioKetThuc.HasValue ? ct.GioKetThuc.Value.ToTimeSpan() : default,
                     TenCa = ct.TenCa
                 })
                 .OrderBy(ct => ct.Ngay)
@@ -59,11 +59,11 @@ public class ShiftService : IShiftService
                 .Select(ct => new ShiftDto
                 {
                     MaCa = ct.MaCa,
-                    MaCoSo = ct.MaCoSo,
+                    MaCoSo = ct.MaCoSo ?? 0,
                     TenCoSo = ct.MaCoSoNavigation != null ? ct.MaCoSoNavigation.TenCoSo : null,
-                    Ngay = ct.Ngay,
-                    GioBatDau = ct.GioBatDau,
-                    GioKetThuc = ct.GioKetThuc,
+                    Ngay = ct.Ngay.HasValue ? ct.Ngay.Value.ToDateTime(TimeOnly.MinValue) : default,
+                    GioBatDau = ct.GioBatDau.HasValue ? ct.GioBatDau.Value.ToTimeSpan() : default,
+                    GioKetThuc = ct.GioKetThuc.HasValue ? ct.GioKetThuc.Value.ToTimeSpan() : default,
                     TenCa = ct.TenCa
                 })
                 .FirstOrDefaultAsync();
@@ -87,11 +87,11 @@ public class ShiftService : IShiftService
                 .Select(ct => new ShiftDto
                 {
                     MaCa = ct.MaCa,
-                    MaCoSo = ct.MaCoSo,
+                    MaCoSo = ct.MaCoSo ?? 0,
                     TenCoSo = ct.MaCoSoNavigation != null ? ct.MaCoSoNavigation.TenCoSo : null,
-                    Ngay = ct.Ngay,
-                    GioBatDau = ct.GioBatDau,
-                    GioKetThuc = ct.GioKetThuc,
+                    Ngay = ct.Ngay.HasValue ? ct.Ngay.Value.ToDateTime(TimeOnly.MinValue) : default,
+                    GioBatDau = ct.GioBatDau.HasValue ? ct.GioBatDau.Value.ToTimeSpan() : default,
+                    GioKetThuc = ct.GioKetThuc.HasValue ? ct.GioKetThuc.Value.ToTimeSpan() : default,
                     TenCa = ct.TenCa
                 })
                 .OrderBy(ct => ct.Ngay)
@@ -113,15 +113,15 @@ public class ShiftService : IShiftService
         {
             var shifts = await _context.CaTrucs
                 .Include(ct => ct.MaCoSoNavigation)
-                .Where(ct => ct.Ngay.Date == date.Date)
+                .Where(ct => ct.Ngay.HasValue && ct.Ngay.Value == DateOnly.FromDateTime(date))
                 .Select(ct => new ShiftDto
                 {
                     MaCa = ct.MaCa,
-                    MaCoSo = ct.MaCoSo,
+                    MaCoSo = ct.MaCoSo ?? 0,
                     TenCoSo = ct.MaCoSoNavigation != null ? ct.MaCoSoNavigation.TenCoSo : null,
-                    Ngay = ct.Ngay,
-                    GioBatDau = ct.GioBatDau,
-                    GioKetThuc = ct.GioKetThuc,
+                    Ngay = ct.Ngay.HasValue ? ct.Ngay.Value.ToDateTime(TimeOnly.MinValue) : default,
+                    GioBatDau = ct.GioBatDau.HasValue ? ct.GioBatDau.Value.ToTimeSpan() : default,
+                    GioKetThuc = ct.GioKetThuc.HasValue ? ct.GioKetThuc.Value.ToTimeSpan() : default,
                     TenCa = ct.TenCa
                 })
                 .OrderBy(ct => ct.GioBatDau)
@@ -161,9 +161,9 @@ public class ShiftService : IShiftService
             {
                 MaCa = newMaCa,
                 MaCoSo = request.MaCoSo,
-                Ngay = request.Ngay,
-                GioBatDau = request.GioBatDau,
-                GioKetThuc = request.GioKetThuc,
+                Ngay = DateOnly.FromDateTime(request.Ngay),
+                GioBatDau = TimeOnly.FromTimeSpan(request.GioBatDau),
+                GioKetThuc = TimeOnly.FromTimeSpan(request.GioKetThuc),
                 TenCa = request.TenCa
             };
 
@@ -192,13 +192,15 @@ public class ShiftService : IShiftService
 
             // Cập nhật các trường nếu có giá trị mới
             if (request.Ngay.HasValue)
-                shift.Ngay = request.Ngay.Value;
+                shift.Ngay = DateOnly.FromDateTime(request.Ngay.Value);
+
 
             if (request.GioBatDau.HasValue)
-                shift.GioBatDau = request.GioBatDau.Value;
+                shift.GioBatDau = TimeOnly.FromTimeSpan(request.GioBatDau.Value);
 
             if (request.GioKetThuc.HasValue)
-                shift.GioKetThuc = request.GioKetThuc.Value;
+                shift.GioKetThuc = TimeOnly.FromTimeSpan(request.GioKetThuc.Value);
+
 
             // Kiểm tra giờ hợp lệ sau khi cập nhật
             if (shift.GioBatDau >= shift.GioKetThuc)
@@ -268,14 +270,21 @@ public class ShiftService : IShiftService
                 .Select(pc => new ShiftAssignmentDto
                 {
                     MaPc = pc.MaPc,
-                    MaNv = pc.MaNv,
+                    MaNv = pc.MaNv ?? 0,
                     TenNhanVien = pc.MaNvNavigation != null ? pc.MaNvNavigation.HoTen : null,
                     ChucVu = pc.MaNvNavigation != null ? pc.MaNvNavigation.ChucVu : null,
-                    MaCa = pc.MaCa,
+                    MaCa = pc.MaCa ?? 0,
                     TenCa = pc.MaCaNavigation != null ? pc.MaCaNavigation.TenCa : null,
-                    Ngay = pc.MaCaNavigation != null ? pc.MaCaNavigation.Ngay : null,
-                    GioBatDau = pc.MaCaNavigation != null ? pc.MaCaNavigation.GioBatDau : null,
-                    GioKetThuc = pc.MaCaNavigation != null ? pc.MaCaNavigation.GioKetThuc : null
+                    Ngay = pc.MaCaNavigation != null && pc.MaCaNavigation.Ngay.HasValue
+                        ? pc.MaCaNavigation.Ngay.Value.ToDateTime(TimeOnly.MinValue)
+                        : null,
+                    GioBatDau = pc.MaCaNavigation != null && pc.MaCaNavigation.GioBatDau.HasValue
+                        ? pc.MaCaNavigation.GioBatDau.Value.ToTimeSpan()
+                        : null,
+                    GioKetThuc = pc.MaCaNavigation != null && pc.MaCaNavigation.GioKetThuc.HasValue
+                        ? pc.MaCaNavigation.GioKetThuc.Value.ToTimeSpan()
+                        : null,
+
                 })
                 .OrderBy(pc => pc.Ngay)
                 .ThenBy(pc => pc.GioBatDau)
@@ -301,14 +310,20 @@ public class ShiftService : IShiftService
                 .Select(pc => new ShiftAssignmentDto
                 {
                     MaPc = pc.MaPc,
-                    MaNv = pc.MaNv,
+                    MaNv = pc.MaNv ?? 0,
                     TenNhanVien = pc.MaNvNavigation != null ? pc.MaNvNavigation.HoTen : null,
                     ChucVu = pc.MaNvNavigation != null ? pc.MaNvNavigation.ChucVu : null,
-                    MaCa = pc.MaCa,
+                    MaCa = pc.MaCa ?? 0,
                     TenCa = pc.MaCaNavigation != null ? pc.MaCaNavigation.TenCa : null,
-                    Ngay = pc.MaCaNavigation != null ? pc.MaCaNavigation.Ngay : null,
-                    GioBatDau = pc.MaCaNavigation != null ? pc.MaCaNavigation.GioBatDau : null,
-                    GioKetThuc = pc.MaCaNavigation != null ? pc.MaCaNavigation.GioKetThuc : null
+                    Ngay = pc.MaCaNavigation != null && pc.MaCaNavigation.Ngay.HasValue
+                        ? pc.MaCaNavigation.Ngay.Value.ToDateTime(TimeOnly.MinValue)
+                        : null,
+                    GioBatDau = pc.MaCaNavigation != null && pc.MaCaNavigation.GioBatDau.HasValue
+                        ? pc.MaCaNavigation.GioBatDau.Value.ToTimeSpan()
+                        : null,
+                    GioKetThuc = pc.MaCaNavigation != null && pc.MaCaNavigation.GioKetThuc.HasValue
+                        ? pc.MaCaNavigation.GioKetThuc.Value.ToTimeSpan()
+                        : null,
                 })
                 .OrderBy(pc => pc.Ngay)
                 .ThenBy(pc => pc.GioBatDau)
@@ -334,14 +349,20 @@ public class ShiftService : IShiftService
                 .Select(pc => new ShiftAssignmentDto
                 {
                     MaPc = pc.MaPc,
-                    MaNv = pc.MaNv,
+                    MaNv = pc.MaNv ?? 0,
                     TenNhanVien = pc.MaNvNavigation != null ? pc.MaNvNavigation.HoTen : null,
                     ChucVu = pc.MaNvNavigation != null ? pc.MaNvNavigation.ChucVu : null,
-                    MaCa = pc.MaCa,
+                    MaCa = pc.MaCa ?? 0,
                     TenCa = pc.MaCaNavigation != null ? pc.MaCaNavigation.TenCa : null,
-                    Ngay = pc.MaCaNavigation != null ? pc.MaCaNavigation.Ngay : null,
-                    GioBatDau = pc.MaCaNavigation != null ? pc.MaCaNavigation.GioBatDau : null,
-                    GioKetThuc = pc.MaCaNavigation != null ? pc.MaCaNavigation.GioKetThuc : null
+                    Ngay = pc.MaCaNavigation != null && pc.MaCaNavigation.Ngay.HasValue
+                        ? pc.MaCaNavigation.Ngay.Value.ToDateTime(TimeOnly.MinValue)
+                        : null,
+                    GioBatDau = pc.MaCaNavigation != null && pc.MaCaNavigation.GioBatDau.HasValue
+                        ? pc.MaCaNavigation.GioBatDau.Value.ToTimeSpan()
+                        : null,
+                    GioKetThuc = pc.MaCaNavigation != null && pc.MaCaNavigation.GioKetThuc.HasValue
+                        ? pc.MaCaNavigation.GioKetThuc.Value.ToTimeSpan()
+                        : null,
                 })
                 .ToListAsync();
 

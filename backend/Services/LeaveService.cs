@@ -30,7 +30,7 @@ public class LeaveService : ILeaveService
                     MaNv = d.MaNv ?? 0,
                     TenNhanVien = d.MaNvNavigation != null ? d.MaNvNavigation.HoTen : null,
                     ChucVu = d.MaNvNavigation != null ? d.MaNvNavigation.ChucVu : null,
-                    NgayNghi = d.NgayNghi.HasValue ? (DateTime?)d.NgayNghi.Value.ToDateTime(TimeOnly.MinValue) : null,
+                    NgayNghi = d.NgayNghi.HasValue ? d.NgayNghi.Value.ToDateTime(TimeOnly.MinValue) : default(DateTime),
                     LyDo = d.LyDo,
                     TrangThai = d.TrangThai
                 })
@@ -56,10 +56,10 @@ public class LeaveService : ILeaveService
                 .Select(d => new LeaveRequestDto
                 {
                     MaDon = d.MaDon,
-                    MaNv = d.MaNv,
+                    MaNv = d.MaNv ?? 0,
                     TenNhanVien = d.MaNvNavigation != null ? d.MaNvNavigation.HoTen : null,
                     ChucVu = d.MaNvNavigation != null ? d.MaNvNavigation.ChucVu : null,
-                    NgayNghi = d.NgayNghi,
+                    NgayNghi = d.NgayNghi.HasValue ? d.NgayNghi.Value.ToDateTime(TimeOnly.MinValue) : default(DateTime),
                     LyDo = d.LyDo,
                     TrangThai = d.TrangThai
                 })
@@ -84,10 +84,11 @@ public class LeaveService : ILeaveService
                 .Select(d => new LeaveRequestDto
                 {
                     MaDon = d.MaDon,
-                    MaNv = d.MaNv,
+                    MaNv = d.MaNv ?? 0,
                     TenNhanVien = d.MaNvNavigation != null ? d.MaNvNavigation.HoTen : null,
                     ChucVu = d.MaNvNavigation != null ? d.MaNvNavigation.ChucVu : null,
-                    NgayNghi = d.NgayNghi,
+                    NgayNghi = d.NgayNghi.HasValue ? d.NgayNghi.Value.ToDateTime(TimeOnly.MinValue) : default(DateTime),
+
                     LyDo = d.LyDo,
                     TrangThai = d.TrangThai
                 })
@@ -113,10 +114,10 @@ public class LeaveService : ILeaveService
                 .Select(d => new LeaveRequestDto
                 {
                     MaDon = d.MaDon,
-                    MaNv = d.MaNv,
+                    MaNv = d.MaNv ?? 0,
                     TenNhanVien = d.MaNvNavigation != null ? d.MaNvNavigation.HoTen : null,
                     ChucVu = d.MaNvNavigation != null ? d.MaNvNavigation.ChucVu : null,
-                    NgayNghi = d.NgayNghi,
+                    NgayNghi = d.NgayNghi.HasValue ? d.NgayNghi.Value.ToDateTime(TimeOnly.MinValue) : default(DateTime),
                     LyDo = d.LyDo,
                     TrangThai = d.TrangThai
                 })
@@ -152,7 +153,7 @@ public class LeaveService : ILeaveService
             var leaveRequest = new DonNghiPhep
             {
                 MaNv = request.MaNv,
-                NgayNghi = request.NgayNghi,
+                NgayNghi = DateOnly.FromDateTime(request.NgayNghi),
                 LyDo = request.LyDo,
                 TrangThai = "cho_duyet" // Mặc định là chờ duyệt
             };
