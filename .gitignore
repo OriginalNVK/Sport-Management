@@ -1,1 +1,5 @@
 prompt.md
+# Visual Studio / .NET
+.vs/
+**/bin/
+**/obj/
