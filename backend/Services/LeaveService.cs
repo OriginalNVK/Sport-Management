@@ -79,9 +79,15 @@ public class LeaveService : ILeaveService
     {
         try
         {
+            // Fetch data first to avoid DateOnly translation issues
             var leaveRequests = await _context.DonNghiPheps
                 .Include(d => d.MaNvNavigation)
                 .Where(d => d.MaNv == maNv)
+                .ToListAsync();
+
+            // Sort and convert in memory
+            return leaveRequests
+                .OrderByDescending(d => d.NgayNghi)
                 .Select(d => new LeaveRequestDto
                 {
                     MaDon = d.MaDon,
@@ -89,14 +95,10 @@ public class LeaveService : ILeaveService
                     TenNhanVien = d.MaNvNavigation != null ? d.MaNvNavigation.HoTen : null,
                     ChucVu = d.MaNvNavigation != null ? d.MaNvNavigation.ChucVu : null,
                     NgayNghi = d.NgayNghi.HasValue ? d.NgayNghi.Value.ToDateTime(TimeOnly.MinValue) : default(DateTime),
-
                     LyDo = d.LyDo,
                     TrangThai = d.TrangThai
                 })
-                .OrderByDescending(d => d.NgayNghi)
-                .ToListAsync();
-
-            return leaveRequests;
+                .ToList();
         }
         catch (Exception ex)
         {
@@ -109,9 +111,15 @@ public class LeaveService : ILeaveService
     {
         try
         {
+            // Fetch data first to avoid DateOnly translation issues
             var leaveRequests = await _context.DonNghiPheps
                 .Include(d => d.MaNvNavigation)
                 .Where(d => d.TrangThai == trangThai)
+                .ToListAsync();
+
+            // Sort and convert in memory
+            return leaveRequests
+                .OrderByDescending(d => d.NgayNghi)
                 .Select(d => new LeaveRequestDto
                 {
                     MaDon = d.MaDon,
@@ -122,10 +130,7 @@ public class LeaveService : ILeaveService
                     LyDo = d.LyDo,
                     TrangThai = d.TrangThai
                 })
-                .OrderByDescending(d => d.NgayNghi)
-                .ToListAsync();
-
-            return leaveRequests;
+                .ToList();
         }
         catch (Exception ex)
         {

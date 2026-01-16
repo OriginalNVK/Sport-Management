@@ -43,6 +43,7 @@ export function Sidebar({ currentPage, onPageChange, userRole, userEmail, onLogo
     { id: 'booking' as PageType, label: 'Booking', icon: Calendar },
     { id: 'services' as PageType, label: 'Services', icon: Briefcase },
     { id: 'payment' as PageType, label: 'Payment', icon: CreditCard },
+    { id: 'my-leave-requests' as PageType, label: 'My Leave Requests', icon: FileText },
     { id: 'profile' as PageType, label: 'Profile', icon: UserCircle },
   ];
 

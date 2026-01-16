@@ -28,7 +28,7 @@ class LeaveService {
    * Lấy token từ localStorage
    */
   private getToken(): string {
-    return localStorage.getItem('token') || '';
+    return localStorage.getItem('access_token') || '';
   }
 
   /**

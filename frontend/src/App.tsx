@@ -11,7 +11,8 @@ import { Payment } from './components/Payment';
 import { Profile } from './components/Profile';
 import { ShiftManagement } from './components/ShiftManagement';
 import { LeaveRequestManagement } from './components/LeaveRequestManagement';
-export type PageType = 'dashboard' | 'users' | 'stadiums' | 'booking' | 'services' | 'payment' | 'profile' | 'shifts' | 'leave-requests';
+import { MyLeaveRequests } from './components/MyLeaveRequests';
+export type PageType = 'dashboard' | 'users' | 'stadiums' | 'booking' | 'services' | 'payment' | 'profile' | 'shifts' | 'leave-requests' | 'my-leave-requests';
 export type UserRole = 'customer' | 'manager';
 
 export default function App() {
@@ -66,6 +67,8 @@ export default function App() {
         return <ShiftManagement />;
       case 'leave-requests':
         return <LeaveRequestManagement />;
+      case 'my-leave-requests':
+        return <MyLeaveRequests />;
       default:
         return <Dashboard userRole={userRole} />;
     }
