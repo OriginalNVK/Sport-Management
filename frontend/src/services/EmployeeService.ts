@@ -29,10 +29,11 @@ export interface CreateEmployeeRequest {
   gioiTinh?: string;
   cmndCccd?: string;
   sdt?: string;
-  email?: string;
+  email: string;
   diaChi?: string;
   chucVu: string;
   luongCoBan?: number;
+  ngayTuyen?: string;
   tenDangNhap: string;
   matKhau: string;
   vaiTro?: string;
@@ -56,7 +57,7 @@ class EmployeeService {
    * Lấy token từ localStorage
    */
   private getToken(): string {
-    return localStorage.getItem('token') || '';
+    return localStorage.getItem('access_token') || '';
   }
 
   /**
