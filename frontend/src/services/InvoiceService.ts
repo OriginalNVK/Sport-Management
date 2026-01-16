@@ -52,7 +52,7 @@ class InvoiceService {
   async createInvoice(request: CreateInvoiceRequest): Promise<number> {
     try {
       const response = await axios.post<number>(
-        `${API_BASE_URL}/invoices/create`,
+        `${API_BASE_URL}/Invoices`,
         request
       );
       return response.data;
@@ -72,7 +72,7 @@ class InvoiceService {
   async getInvoiceById(maHd: number): Promise<InvoiceResponse | null> {
     try {
       const response = await axios.get<InvoiceResponse>(
-        `${API_BASE_URL}/invoices/${maHd}`
+        `${API_BASE_URL}/Invoices/${maHd}`
       );
       return response.data;
     } catch (error) {
@@ -94,7 +94,7 @@ class InvoiceService {
   async getInvoicesByCustomer(maKh: number): Promise<InvoiceResponse[]> {
     try {
       const response = await axios.get<InvoiceResponse[]>(
-        `${API_BASE_URL}/invoices/customer/${maKh}`
+        `${API_BASE_URL}/Invoices/customer/${maKh}`
       );
       return response.data;
     } catch (error) {
@@ -114,7 +114,7 @@ class InvoiceService {
     try {
       const params = trangThai ? { trangThai } : {};
       const response = await axios.get<InvoiceResponse[]>(
-        `${API_BASE_URL}/invoices/all`,
+        `${API_BASE_URL}/Invoices/all`,
         { params }
       );
       return response.data;
@@ -134,7 +134,7 @@ class InvoiceService {
   async payInvoice(request: PaymentRequest): Promise<PaymentResponse> {
     try {
       const response = await axios.post<PaymentResponse>(
-        `${API_BASE_URL}/invoices/pay`,
+        `${API_BASE_URL}/Invoices/pay`,
         request
       );
       return response.data;
@@ -154,12 +154,32 @@ class InvoiceService {
   async cancelInvoice(maHd: number): Promise<boolean> {
     try {
       const response = await axios.delete<boolean>(
-        `${API_BASE_URL}/invoices/${maHd}`
+        `${API_BASE_URL}/Invoices/${maHd}`
       );
       return response.data;
     } catch (error) {
       if (axios.isAxiosError(error)) {
         throw new Error(error.response?.data?.message || 'Lỗi khi hủy hóa đơn');
+      }
+      throw error;
+    }
+  }
+
+  /**
+   * Lấy danh sách hóa đơn đã thanh toán
+   * @returns Danh sách hóa đơn đã thanh toán
+   */
+  async getPaidInvoices(): Promise<InvoiceResponse[]> {
+    try {
+      const token = localStorage.getItem('token');
+      const response = await axios.get<{ success: boolean; data: InvoiceResponse[] }>(
+        `${API_BASE_URL}/Invoices/all/da_tt`,
+        token ? { headers: { Authorization: `Bearer ${token}` } } : undefined
+      );
+      return response.data.data || [];
+    } catch (error) {
+      if (axios.isAxiosError(error)) {
+        throw new Error(error.response?.data?.message || 'Lỗi khi lấy danh sách hóa đơn đã thanh toán');
       }
       throw error;
     }

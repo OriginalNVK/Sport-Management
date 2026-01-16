@@ -15,6 +15,8 @@ builder.Services.AddDbContext<SportContext>(options =>
     options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")
         ?? throw new InvalidOperationException("Connection string 'DefaultConnection' not found."));
 });
+var cs = builder.Configuration.GetConnectionString("DefaultConnection");
+Console.WriteLine(">>> DefaultConnection = " + cs);
 
 // Configure CORS
 builder.Services.AddCors(options =>
@@ -30,6 +32,8 @@ builder.Services.AddCors(options =>
 // Register services
 builder.Services.AddScoped<IAuthService, AuthService>();
 builder.Services.AddScoped<IInvoiceService, InvoiceService>();
+builder.Services.AddScoped<IBookingService, BookingService>();
+builder.Services.AddScoped<IDashboardService, DashboardService>();
 
 // Configure JWT Authentication
 var jwtSettings = builder.Configuration.GetSection("JwtSettings");
