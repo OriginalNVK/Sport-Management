@@ -2,7 +2,7 @@ using backend.Data;
 using backend.DTOs;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Data.SqlClient;
-using System.ComponentModel.DataAnnotations.Schema;
+using backend.DTOs;
 using System.Data;
 
 namespace backend.Services;
@@ -332,60 +332,4 @@ public class InvoiceService : IInvoiceService
             throw new InvalidOperationException($"Lỗi khi xem chi tiết hóa đơn: {ex.Message}", ex);
         }
     }
-}
-
-// DTO để nhận kết quả từ sp_CapNhatHoaDon
-internal class UpdateInvoiceResultDto
-{
-    [Column("ma_hd")]
-    public int MaHd { get; set; }
-
-    [Column("ma_phieu")]
-    public int MaPhieu { get; set; }
-
-    [Column("tong_tien")]
-    public decimal TongTien { get; set; }
-
-    [Column("giam_gia")]
-    public decimal GiamGia { get; set; }
-
-    [Column("thue")]
-    public decimal Thue { get; set; }
-
-    [Column("tong_cuoi")]
-    public decimal TongCuoi { get; set; }
-}
-
-// DTO để nhận kết quả từ sp_XemThongTinHoaDon
-internal class InvoiceDetailResultDto
-{
-    [Column("ma_hd")]
-    public int MaHd { get; set; }
-
-    [Column("ma_phieu")]
-    public int MaPhieu { get; set; }
-
-    [Column("ngay_lap")]
-    public DateTime NgayLap { get; set; }
-
-    [Column("tong_tien")]
-    public decimal TongTien { get; set; }
-
-    [Column("giam_gia")]
-    public decimal GiamGia { get; set; }
-
-    [Column("thue")]
-    public decimal Thue { get; set; }
-
-    [Column("tong_cuoi")]
-    public decimal TongCuoi { get; set; }
-
-    [Column("tinh_trang_tt")]
-    public string? TinhTrangTt { get; set; }
-
-    [Column("ten_khach_hang")]
-    public string? TenKhachHang { get; set; }
-
-    [Column("ten_san")]
-    public string? TenSan { get; set; }
 }
