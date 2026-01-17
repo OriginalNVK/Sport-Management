@@ -99,8 +99,18 @@ export type ConfirmBookingRequest = CreateBookingRequest & {
 type ApiWrap<T> = { success: boolean; message?: string; data: T };
 
 export async function checkAvailability(body: CheckFieldAvailabilityRequest, token?: string) {
-  const res = await axios.post<ApiWrap<{ isAvailable: boolean }>>(`${API_BASE}/bookings/check-availability`, body, token ? { headers: { Authorization: `Bearer ${token}` } } : undefined);
-  return res.data;
+  try {
+    const res = await axios.post<ApiWrap<{ isAvailable: boolean }>>(`${API_BASE}/bookings/check-availability`, body, token ? { headers: { Authorization: `Bearer ${token}` } } : undefined);
+    return res.data;
+  } catch (e: any) {
+    return (
+      e?.response?.data ?? {
+        success: false,
+        message: e?.message ?? "Không thể giữ chỗ sân",
+        data: null,
+      }
+    );
+  }
 }
 
 export function getGia(maLoai: number, loaiNgay: string, khungGio: string, token?: string) {
@@ -118,8 +128,18 @@ export function getReceptionistCreated(maNv: number, token?: string) {
 }
 
 export async function createBooking(body: CreateBookingRequest, token?: string) {
-  const res = await axios.post<ApiWrap<{ ma_phieu: number }>>(`${API_BASE}/bookings`, body, token ? { headers: { Authorization: `Bearer ${token}` } } : undefined);
-  return res.data;
+  try {
+    const res = await axios.post<ApiWrap<{ ma_phieu: number }>>(`${API_BASE}/bookings`, body, token ? { headers: { Authorization: `Bearer ${token}` } } : undefined);
+    return res.data;
+  } catch (e: any) {
+    return (
+      e?.response?.data ?? {
+        success: false,
+        message: e?.message ?? "Không thể giữ chỗ sân",
+        data: null,
+      }
+    );
+  }
 }
 
 export async function holdSan(body: HoldSanRequest, token?: string) {
@@ -138,18 +158,48 @@ export async function holdSan(body: HoldSanRequest, token?: string) {
 }
 
 export async function releaseHold(holdToken: string, token?: string) {
-  const res = await axios.delete<ApiWrap<null>>(`${API_BASE}/bookings/hold/${holdToken}`, token ? { headers: { Authorization: `Bearer ${token}` } } : undefined);
-  return res.data;
+  try {
+    const res = await axios.delete<ApiWrap<null>>(`${API_BASE}/bookings/hold/${holdToken}`, token ? { headers: { Authorization: `Bearer ${token}` } } : undefined);
+    return res.data;
+  } catch (e: any) {
+    return (
+      e?.response?.data ?? {
+        success: false,
+        message: e?.message ?? "Không thể giữ chỗ sân",
+        data: null,
+      }
+    );
+  }
 }
 
 export async function confirmBooking(body: ConfirmBookingRequest, token?: string) {
-  const res = await axios.post<ApiWrap<{ ma_phieu: number }>>(`${API_BASE}/bookings/confirm`, body, token ? { headers: { Authorization: `Bearer ${token}` } } : undefined);
-  return res.data;
+  try {
+    const res = await axios.post<ApiWrap<{ ma_phieu: number }>>(`${API_BASE}/bookings/confirm`, body, token ? { headers: { Authorization: `Bearer ${token}` } } : undefined);
+    return res.data;
+  } catch (e: any) {
+    return (
+      e?.response?.data ?? {
+        success: false,
+        message: e?.message ?? "Không thể giữ chỗ sân",
+        data: null,
+      }
+    );
+  }
 }
 
 export async function getBookingsByCustomer(maKh: number, token?: string) {
-  const res = await axios.get<ApiWrap<BookingResponse[]>>(`${API_BASE}/bookings/customer/${maKh}`, token ? { headers: { Authorization: `Bearer ${token}` } } : undefined);
-  return res.data;
+  try {
+    const res = await axios.get<ApiWrap<BookingResponse[]>>(`${API_BASE}/bookings/customer/${maKh}`, token ? { headers: { Authorization: `Bearer ${token}` } } : undefined);
+    return res.data;
+  } catch (e: any) {
+    return (
+      e?.response?.data ?? {
+        success: false,
+        message: e?.message ?? "Không thể giữ chỗ sân",
+        data: null,
+      }
+    );
+  }
 }
 
 export async function cancelBooking(maPhieu: number, token?: string) {
