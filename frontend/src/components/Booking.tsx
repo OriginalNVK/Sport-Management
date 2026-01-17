@@ -1,8 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
-import { Calendar as CalendarIcon, Clock, User, CheckCircle, XCircle } from "lucide-react";
+import { Calendar as CalendarIcon, Clock, CheckCircle, XCircle } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "./ui/card";
 import { Button } from "./ui/button";
-import { Badge } from "./ui/badge";
 import { Calendar } from "./ui/calendar";
 import type { UserRole, PageType } from "../App";
 
@@ -19,6 +18,21 @@ interface BookingProps {
 }
 
 // ===== Helpers =====
+type DonViTinh = "gio" | "ca" | "tran";
+
+function normalizeDonViTinh(input: any): DonViTinh {
+  const v = String(input ?? "")
+    .trim()
+    .toLowerCase();
+
+  if (v === "gio" || v === "giờ" || v === "hour") return "gio";
+  if (v === "ca" || v === "cả" || v === "shift") return "ca";
+  if (v === "tran" || v === "trận" || v === "match") return "tran";
+
+  // fallback an toàn
+  return "gio";
+}
+
 type VaiTro = "khach_hang" | "le_tan" | "quan_ly" | "nhan_vien" | string;
 
 // map từ UserRole (nếu bạn đang dùng enum/union khác) -> VaiTro theo backend
@@ -39,7 +53,7 @@ function normalizeTime(t: string) {
   return t.length === 5 ? `${t}:00` : t;
 }
 
-const UNIT_MINUTES: Record<"gio" | "ca" | "tran", number> = { gio: 60, ca: 120, tran: 90 };
+const UNIT_MINUTES: Record<DonViTinh, number> = { gio: 60, ca: 120, tran: 90 };
 
 function toMinutes(hhmm: string) {
   const [h, m] = hhmm.split(":").map(Number);
@@ -55,7 +69,7 @@ function calcBlocks(start: string, end: string, donViTinh: "gio" | "ca" | "tran"
 }
 
 function getLoaiNgay(d: Date): "thuong" | "cuoi_tuan" {
-  const day = d.getDay(); // 0 CN, 6 T7
+  const day = d.getDay();
   return day === 0 || day === 6 ? "cuoi_tuan" : "thuong";
 }
 
@@ -67,11 +81,7 @@ function getKhungGio(gioBatDau: string): "sang" | "chieu" | "toi" {
 }
 
 export function Booking({ userRole, onNavigate }: BookingProps) {
-  const vaiTro = useMemo(() => {
-    const mapped = mapUserRoleToVaiTro(userRole);
-    return mapped;
-  }, [userRole]);
-
+  const vaiTro = useMemo(() => mapUserRoleToVaiTro(userRole), [userRole]);
   const isLeTan = vaiTro === "le_tan";
 
   // ===== Data load =====
@@ -97,6 +107,20 @@ export function Booking({ userRole, onNavigate }: BookingProps) {
 
   // ===== Booking action =====
   const [booking, setBooking] = useState(false);
+
+  // ===== Confirm modal =====
+  const [openConfirm, setOpenConfirm] = useState(false);
+  const [selectedSan, setSelectedSan] = useState<SanDto | null>(null);
+  const [confirmLoading, setConfirmLoading] = useState(false);
+
+  const [priceInfo, setPriceInfo] = useState<{
+    gia: number;
+    soDonVi: number;
+    tongTien: number;
+    loaiNgay: "thuong" | "cuoi_tuan";
+    khungGio: "sang" | "chieu" | "toi";
+    donViTinh: "gio" | "ca" | "tran";
+  } | null>(null);
 
   useEffect(() => {
     (async () => {
@@ -124,14 +148,12 @@ export function Booking({ userRole, onNavigate }: BookingProps) {
     return loaiSans.find((x) => x.maLoai === selectedLoai) ?? null;
   }, [selectedLoai, loaiSans]);
 
-  const donViTinh = selectedLoaiObj?.donViTinh ?? "gio";
+  const donViTinh = (selectedLoaiObj?.donViTinh ?? "gio") as "gio" | "ca" | "tran";
 
-  // Lọc sân theo tình trạng + loại
   const filteredSans = useMemo(() => {
     return sans.filter((s) => (s.tinhTrang ?? "").trim().toLowerCase() === "con_trong").filter((s) => (selectedLoai === "all" ? true : s.maLoai === selectedLoai));
   }, [sans, selectedLoai]);
 
-  // Chỉ hiển thị sân trống theo khung giờ sau khi check
   const displaySans = useMemo(() => {
     if (availableSet.size === 0) return filteredSans;
     return filteredSans.filter((s) => availableSet.has(s.maSan));
@@ -152,16 +174,18 @@ export function Booking({ userRole, onNavigate }: BookingProps) {
     }
 
     try {
-      calcBlocks(gioBatDau, gioKetThuc, selectedLoaiObj.donViTinh);
+      calcBlocks(gioBatDau, gioKetThuc, (selectedLoaiObj.donViTinh ?? "gio") as any);
     } catch (e: any) {
       alert(e.message);
       return;
     }
+
     setChecking(true);
     try {
       const ngayDat = date.toISOString().slice(0, 10);
       const token = localStorage.getItem("token");
       const set = new Set<number>();
+
       for (let i = 0; i < filteredSans.length; i += 10) {
         const chunk = filteredSans.slice(i, i + 10);
         const resChunk = await Promise.all(
@@ -180,6 +204,7 @@ export function Booking({ userRole, onNavigate }: BookingProps) {
         );
         for (const x of resChunk) if (x.ok) set.add(x.maSan);
       }
+
       setAvailableSet(set);
 
       if (set.size === 0) alert("Không có sân trống trong khung giờ này.");
@@ -206,7 +231,10 @@ export function Booking({ userRole, onNavigate }: BookingProps) {
     }
   }
 
-  async function handleBookNow(s: SanDto) {
+  // ==========================
+  // OPEN CONFIRM MODAL (preview info + price)
+  // ==========================
+  async function handleOpenConfirm(s: SanDto) {
     if (!date) {
       alert("Vui lòng chọn ngày");
       return;
@@ -217,46 +245,22 @@ export function Booking({ userRole, onNavigate }: BookingProps) {
       alert("Không xác định được loại sân của sân này");
       return;
     }
-    let hinhThuc: "online" | "truc_tiep";
-    let nguoiTaoPhieu: string | null = null;
 
-    let resolvedMaKh: number;
-
-    if (!isLeTan) {
-      const stored = localStorage.getItem("maKh");
-      const mk = stored ? Number(stored) : NaN;
-
-      if (!mk || Number.isNaN(mk)) {
-        alert("Không xác định được mã khách hàng (maKh). Vui lòng đăng nhập lại.");
-        return;
-      }
-
-      resolvedMaKh = mk;
-      hinhThuc = "online";
-    } else {
-      if (!customerInfo) {
-        alert("Lễ tân: hãy nhập SĐT và bấm 'Tìm khách' trước khi đặt.");
-        return;
-      }
-
-      resolvedMaKh = customerInfo.maKh;
-      hinhThuc = "truc_tiep";
-
-      const maNvStr = localStorage.getItem("maNv");
-      const maNv = maNvStr ? Number(maNvStr) : NaN;
-      if (!maNv || Number.isNaN(maNv)) {
-        alert("Không xác định được mã lễ tân (maNv). Vui lòng đăng nhập lại.");
-        return;
-      }
-      const token = localStorage.getItem("token");
-      const res = await getReceptionistCreated(maNv, token ?? undefined);
-      nguoiTaoPhieu = res.data?.data?.ten_dang_nhap;
-      console.log("Nguoi tao phieu:", nguoiTaoPhieu);
+    if (isLeTan && !customerInfo) {
+      alert("Lễ tân: hãy nhập SĐT và bấm 'Tìm khách' trước khi đặt.");
+      return;
     }
 
     try {
+      calcBlocks(gioBatDau, gioKetThuc, (loaiOfSan.donViTinh ?? "gio") as any);
+
       const ngayDat = date.toISOString().slice(0, 10);
       const token = localStorage.getItem("token");
+
+      setConfirmLoading(true);
+      setSelectedSan(s);
+
+      // check availability (preview)
       const av = await checkAvailability(
         {
           maSan: s.maSan,
@@ -269,33 +273,115 @@ export function Booking({ userRole, onNavigate }: BookingProps) {
 
       if (!av.data.isAvailable) {
         alert("Sân vừa có lịch bận. Vui lòng chọn sân/giờ khác.");
+        setSelectedSan(null);
         return;
       }
 
+      // get price preview
       const loaiNgay = getLoaiNgay(date);
       const khungGio = getKhungGio(gioBatDau);
       const giaRes = await getGia(loaiOfSan.maLoai, loaiNgay, khungGio, token ?? undefined);
       const gia = giaRes.data?.data?.gia ?? 0;
 
-      const startMin = toMinutes(gioBatDau);
-      const endMin = toMinutes(gioKetThuc);
-      const totalMinutes = endMin - startMin;
+      const totalMinutes = toMinutes(gioKetThuc) - toMinutes(gioBatDau);
+      const dv = normalizeDonViTinh(loaiOfSan.donViTinh);
+      const unitMinutes = UNIT_MINUTES[dv];
 
-      const unitMinutes = UNIT_MINUTES[loaiOfSan.donViTinh ?? "gio"];
       const soDonVi = Math.round(totalMinutes / unitMinutes);
 
       const tongTien = gia * soDonVi;
-      if (isLeTan && !customerInfo) {
-        alert("Lễ tân: hãy tìm khách trước khi đặt");
+
+      setPriceInfo({
+        gia,
+        soDonVi,
+        tongTien,
+        loaiNgay,
+        khungGio,
+        donViTinh: (loaiOfSan.donViTinh ?? "gio") as any,
+      });
+
+      setOpenConfirm(true);
+    } catch (e: any) {
+      alert(e?.message ?? "Lỗi chuẩn bị thông tin đặt sân");
+      setSelectedSan(null);
+      setPriceInfo(null);
+    } finally {
+      setConfirmLoading(false);
+    }
+  }
+
+  // ==========================
+  // CONFIRM BOOKING (call createBooking)
+  // ==========================
+  async function handleConfirmBooking() {
+    if (!selectedSan || !date) return;
+
+    const loaiOfSan = loaiSans.find((ls) => ls.maLoai === selectedSan.maLoai);
+    if (!loaiOfSan) {
+      alert("Không xác định được loại sân");
+      return;
+    }
+
+    let hinhThuc: "online" | "truc_tiep";
+    let nguoiTaoPhieu: string | null = null;
+    let resolvedMaKh: number;
+
+    if (!isLeTan) {
+      const stored = localStorage.getItem("maKh");
+      const mk = stored ? Number(stored) : NaN;
+      if (!mk || Number.isNaN(mk)) {
+        alert("Không xác định được mã khách hàng (maKh). Vui lòng đăng nhập lại.");
+        return;
+      }
+      resolvedMaKh = mk;
+      hinhThuc = "online";
+    } else {
+      if (!customerInfo) {
+        alert("Lễ tân: hãy tìm khách trước khi đặt.");
+        return;
+      }
+      resolvedMaKh = customerInfo.maKh;
+      hinhThuc = "truc_tiep";
+
+      const maNvStr = localStorage.getItem("maNv");
+      const maNv = maNvStr ? Number(maNvStr) : NaN;
+      if (!maNv || Number.isNaN(maNv)) {
+        alert("Không xác định được mã lễ tân (maNv). Vui lòng đăng nhập lại.");
+        return;
+      }
+      const token = localStorage.getItem("token");
+      const res = await getReceptionistCreated(maNv, token ?? undefined);
+      nguoiTaoPhieu = res.data?.data?.ten_dang_nhap ?? null;
+    }
+
+    try {
+      setBooking(true);
+
+      const ngayDat = date.toISOString().slice(0, 10);
+      const token = localStorage.getItem("token");
+
+      // check again to avoid race condition
+      const av = await checkAvailability(
+        {
+          maSan: selectedSan.maSan,
+          ngayDat,
+          gioBatDau: normalizeTime(gioBatDau),
+          gioKetThuc: normalizeTime(gioKetThuc),
+        },
+        token ?? undefined
+      );
+
+      if (!av.data.isAvailable) {
+        alert("Sân vừa có lịch bận. Vui lòng chọn sân/giờ khác.");
         return;
       }
 
-      // (5) tạo booking
-      setBooking(true);
+      const tongTien = priceInfo?.tongTien ?? 0;
+
       const createRes = await createBooking(
         {
           maKh: resolvedMaKh,
-          maSan: s.maSan,
+          maSan: selectedSan.maSan,
           nguoiTaoPhieu,
           ngayDat,
           gioBatDau: normalizeTime(gioBatDau),
@@ -310,8 +396,13 @@ export function Booking({ userRole, onNavigate }: BookingProps) {
         alert(createRes.message ?? "Đặt sân thất bại");
         return;
       }
+
       alert(`Đặt sân thành công! Mã phiếu: ${createRes.data?.ma_phieu}`);
 
+      // reset
+      setOpenConfirm(false);
+      setSelectedSan(null);
+      setPriceInfo(null);
       setAvailableSet(new Set());
     } catch (e: any) {
       alert(e?.message ?? "Lỗi khi đặt sân");
@@ -319,14 +410,26 @@ export function Booking({ userRole, onNavigate }: BookingProps) {
       setBooking(false);
     }
   }
+
+  function closeConfirm() {
+    if (booking) return;
+    setOpenConfirm(false);
+    setSelectedSan(null);
+    setPriceInfo(null);
+  }
+
+  const selectedSanLoaiName = useMemo(() => {
+    if (!selectedSan) return "";
+    return loaiSans.find((x) => x.maLoai === selectedSan.maLoai)?.tenLoai ?? `${selectedSan.maLoai}`;
+  }, [selectedSan, loaiSans]);
+
   return (
     <div className="p-8">
       <h1 className="mb-8 text-gray-800">{isLeTan ? "Booking (Lễ tân)" : "Stadium Booking"}</h1>
 
       {/* ==========================
         Receptionist extra block
-        Chỉ lễ tân mới thấy
-    ========================== */}
+      ========================== */}
       {isLeTan && (
         <Card className="shadow-sm mb-6">
           <CardHeader>
@@ -354,7 +457,6 @@ export function Booking({ userRole, onNavigate }: BookingProps) {
               </div>
             </div>
 
-            {/* Gợi ý: lễ tân phải tìm khách trước khi Book */}
             {!customerInfo && (
               <div className="text-sm text-amber-700 bg-amber-50 border border-amber-200 rounded-lg p-3">
                 Lễ tân: vui lòng nhập SĐT và bấm <b>Tìm khách</b> trước khi đặt sân.
@@ -365,8 +467,8 @@ export function Booking({ userRole, onNavigate }: BookingProps) {
       )}
 
       {/* ==========================
-        Filter giống khách hàng
-    ========================== */}
+        Filter
+      ========================== */}
       <div className="mb-8">
         <h3 className="mb-4 text-gray-700">Lọc theo loại sân</h3>
         <div className="flex gap-3 flex-wrap">
@@ -390,8 +492,8 @@ export function Booking({ userRole, onNavigate }: BookingProps) {
       </div>
 
       {/* ==========================
-        Time input + constraint giống khách hàng
-    ========================== */}
+        Time input + constraint
+      ========================== */}
       <div className="mb-6 flex flex-wrap gap-4 items-end">
         <div>
           <label className="block text-sm text-gray-600 mb-1">Ngày đặt</label>
@@ -425,22 +527,20 @@ export function Booking({ userRole, onNavigate }: BookingProps) {
       {error && <div className="text-red-600">{error}</div>}
 
       {/* ==========================
-        Stadiums Grid giống khách hàng
-        Lễ tân: disable Book nếu chưa có customerInfo
-    ========================== */}
+        Stadiums Grid
+      ========================== */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         {displaySans.map((s) => (
           <div key={s.maSan} className="border rounded-lg p-6 bg-white">
             <h3 className="mb-2 text-gray-900">{s.tenSan ?? `Sân ${s.maSan}`}</h3>
-            {/* <div className="text-gray-600 mb-4">Tình trạng: {s.tinhTrang}</div> */}
 
             <button
-              disabled={booking || (isLeTan && !customerInfo)}
-              onClick={() => handleBookNow(s)}
+              disabled={booking || confirmLoading || (isLeTan && !customerInfo)}
+              onClick={() => handleOpenConfirm(s)}
               className="w-full px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50"
               title={isLeTan && !customerInfo ? "Lễ tân cần tìm khách theo SĐT trước" : undefined}
             >
-              {booking ? "Đang đặt..." : "Book Now"}
+              {confirmLoading && selectedSan?.maSan === s.maSan ? "Đang tải..." : "Chọn sân"}
             </button>
           </div>
         ))}
@@ -448,11 +548,91 @@ export function Booking({ userRole, onNavigate }: BookingProps) {
 
       {displaySans.length === 0 && <div className="text-center py-12 text-gray-500">Không có sân trống theo ngày/giờ đã chọn.</div>}
 
+      {/* ==========================
+        CONFIRM MODAL
+      ========================== */}
+      {openConfirm && selectedSan && (
+        <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50">
+          <div className="w-full max-w-xl bg-white rounded-xl shadow-lg p-6">
+            <div className="flex items-start justify-between gap-4">
+              <div>
+                <h2 className="text-xl font-semibold text-gray-900">Xác nhận đặt sân</h2>
+                <p className="text-sm text-gray-500">Kiểm tra lại thông tin trước khi tạo phiếu.</p>
+              </div>
+              <button onClick={closeConfirm} className="px-3 py-1 rounded-lg bg-gray-100 hover:bg-gray-200 text-gray-700">
+                Đóng
+              </button>
+            </div>
+
+            <div className="mt-4 space-y-3 text-sm">
+              <div className="p-3 rounded-lg border">
+                <div className="font-medium text-gray-900">{selectedSan.tenSan ?? `Sân ${selectedSan.maSan}`}</div>
+                <div className="text-gray-600">Mã sân: {selectedSan.maSan}</div>
+                <div className="text-gray-600">Loại sân: {selectedSanLoaiName}</div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-3">
+                <div className="p-3 rounded-lg border">
+                  <div className="text-gray-500">Ngày</div>
+                  <div className="font-medium">{date?.toISOString().slice(0, 10)}</div>
+                </div>
+                <div className="p-3 rounded-lg border">
+                  <div className="text-gray-500">Khung giờ</div>
+                  <div className="font-medium">
+                    {gioBatDau} - {gioKetThuc}
+                  </div>
+                </div>
+              </div>
+
+              {isLeTan && (
+                <div className="p-3 rounded-lg border">
+                  <div className="text-gray-500">Khách đặt</div>
+                  <div className="font-medium">
+                    {customerInfo?.hoTen} — Mã KH: {customerInfo?.maKh} — SĐT: {sdt}
+                  </div>
+                </div>
+              )}
+
+              <div className="p-3 rounded-lg border">
+                <div className="text-gray-500">Tính tiền</div>
+                <div className="mt-1 flex flex-wrap gap-x-6 gap-y-1">
+                  <div>
+                    Đơn vị: <b>{priceInfo?.donViTinh}</b> ({priceInfo ? UNIT_MINUTES[priceInfo.donViTinh] : ""} phút)
+                  </div>
+                  <div>
+                    Giá: <b>{(priceInfo?.gia ?? 0).toLocaleString()}</b>
+                  </div>
+                  <div>
+                    Số đơn vị: <b>{priceInfo?.soDonVi ?? 0}</b>
+                  </div>
+                  <div>
+                    Tổng tiền: <b>{(priceInfo?.tongTien ?? 0).toLocaleString()}</b>
+                  </div>
+                </div>
+                <div className="text-xs text-gray-500 mt-1">
+                  (Loại ngày: {priceInfo?.loaiNgay} • Khung: {priceInfo?.khungGio})
+                </div>
+              </div>
+            </div>
+
+            <div className="mt-6 flex gap-3 justify-end">
+              <button className="px-4 py-2 rounded-lg bg-gray-100 hover:bg-gray-200 text-gray-700 disabled:opacity-50" disabled={booking} onClick={closeConfirm}>
+                Hủy
+              </button>
+
+              <button className="px-4 py-2 rounded-lg bg-blue-600 hover:bg-blue-700 text-white disabled:opacity-50" disabled={booking} onClick={handleConfirmBooking}>
+                {booking ? "Đang tạo phiếu..." : "Xác nhận đặt"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ==========================
+        Le tan extra demo UI (giữ nguyên)
+      ========================== */}
       {isLeTan && (
         <>
-          {/* ==========================
-        Stats (giữ nguyên demo)
-    ========================== */}
           <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8 mt-10">
             <Card className="shadow-sm border-l-4 border-l-blue-500">
               <CardContent className="pt-6">
@@ -511,9 +691,6 @@ export function Booking({ userRole, onNavigate }: BookingProps) {
             </Card>
           </div>
 
-          {/* ==========================
-        Calendar block (giữ)
-    ========================== */}
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
             <Card className="shadow-sm">
               <CardHeader>

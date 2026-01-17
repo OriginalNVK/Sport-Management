@@ -14,7 +14,8 @@ builder.Services.AddControllers()
     {
         // Hỗ trợ DateOnly và TimeOnly serialization
         options.JsonSerializerOptions.Converters.Add(new System.Text.Json.Serialization.JsonStringEnumConverter());
-    });
+    })
+		;
 builder.Services.AddDbContext<SportContext>(options =>
 {
     options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")

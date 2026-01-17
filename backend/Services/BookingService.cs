@@ -83,72 +83,89 @@ public class BookingService : IBookingService
         };
     }
     public async Task<int> CreateBookingAsync(CreateBookingRequest request)
+{
+    ValidateTimeRange(request.GioBatDau, request.GioKetThuc);
+
+    await using var tx = await _context.Database
+        .BeginTransactionAsync(System.Data.IsolationLevel.Serializable);
+
+    // Check sân
+    var san = await _context.Sans.FirstOrDefaultAsync(s => s.MaSan == request.MaSan);
+    if (san == null)
+        throw new InvalidOperationException($"Không tìm thấy sân với mã {request.MaSan}");
+
+    if (!string.Equals((san.TinhTrang ?? "").Trim(), "con_trong", StringComparison.OrdinalIgnoreCase))
+        throw new InvalidOperationException($"Sân {request.MaSan} hiện không khả dụng (tình trạng: {san.TinhTrang})");
+
+    // ==========================
+    // (NEW) Check giới hạn 2 booking / khách / ngày
+    // Không tính phiếu đã hủy
+    // ==========================
+    var ngayDatDate = request.NgayDat;
+
+    var countToday = await _context.PhieuDatSans.CountAsync(p =>
+        p.MaKh == request.MaKh
+        && p.NgayDat == ngayDatDate
+        && p.TrangThai != "huy"   
+    );
+
+    if (countToday >= 2)
+        throw new InvalidOperationException("Mỗi khách hàng chỉ được đặt tối đa 2 sân trong ngày.");
+
+    // Check trùng lịch
+    var conflict = await _context.LichDatSans.AnyAsync(x =>
+        x.MaSan == request.MaSan &&
+        x.Ngay == ngayDatDate &&
+        request.GioBatDau < x.GioKetThuc &&
+        request.GioKetThuc > x.GioBatDau
+    );
+
+    if (conflict)
+        throw new InvalidOperationException("Sân đã được đặt trong khung giờ này. Vui lòng chọn giờ khác.");
+
+    // Sinh mã phiếu
+    var maxMaPhieu = await _context.PhieuDatSans.MaxAsync(x => (int?)x.MaPhieu) ?? 0;
+    var nextMaPhieu = maxMaPhieu + 1;
+
+    // Tạo phiếu
+    var phieu = new PhieuDatSan
     {
-        ValidateTimeRange(request.GioBatDau, request.GioKetThuc);
+        MaPhieu = nextMaPhieu,
+        MaKh = request.MaKh,
+        MaSan = request.MaSan,
+        NguoiTaoPhieu = string.IsNullOrWhiteSpace(request.NguoiTaoPhieu) ? null : request.NguoiTaoPhieu,
+        NgayTaoPhieu = DateTime.Now,
 
-        await using var tx = await _context.Database.BeginTransactionAsync(System.Data.IsolationLevel.Serializable);
+        NgayDat = request.NgayDat, // đảm bảo lưu đúng date (nếu DB là date)
+        GioBatDau = request.GioBatDau,
+        GioKetThuc = request.GioKetThuc,
 
-        // Check sân
-        var san = await _context.Sans.FirstOrDefaultAsync(s => s.MaSan == request.MaSan);
-        if (san == null)
-            throw new InvalidOperationException($"Không tìm thấy sân với mã {request.MaSan}");
+        HinhThuc = request.HinhThuc,
+        TrangThai = "cho_xac_nhan",
+        TongTien = request.TongTien ?? 0m,
+        TinhTrangTt = "chua_tt"
+    };
 
-        if (!string.Equals((san.TinhTrang ?? "").Trim(), "con_trong", StringComparison.OrdinalIgnoreCase))
-            throw new InvalidOperationException($"Sân {request.MaSan} hiện không khả dụng (tình trạng: {san.TinhTrang})");
+    _context.PhieuDatSans.Add(phieu);
 
-        // Check trùng lịch
-        var conflict = await _context.LichDatSans.AnyAsync(x =>
-            x.MaSan == request.MaSan &&
-            x.Ngay == request.NgayDat &&
-            request.GioBatDau < x.GioKetThuc &&
-            request.GioKetThuc > x.GioBatDau
-        );
+    // Ghi lịch đặt sân
+    var lich = new LichDatSan
+    {
+        MaSan = request.MaSan,
+        MaPhieu = nextMaPhieu,
+        Ngay = request.NgayDat, // đảm bảo đồng bộ date
+        GioBatDau = request.GioBatDau,
+        GioKetThuc = request.GioKetThuc
+    };
 
-        if (conflict)
-            throw new InvalidOperationException("Sân đã được đặt trong khung giờ này. Vui lòng chọn giờ khác.");
+    _context.LichDatSans.Add(lich);
 
-        // Sinh mã phiếu
-        var maxMaPhieu = await _context.PhieuDatSans.MaxAsync(x => (int?)x.MaPhieu) ?? 0;
-        var nextMaPhieu = maxMaPhieu + 1;
+    await _context.SaveChangesAsync();
+    await tx.CommitAsync();
 
-        // Tạo phiếu
-        var phieu = new PhieuDatSan
-        {
-            MaPhieu = nextMaPhieu,
-            MaKh = request.MaKh,
-            MaSan = request.MaSan,
-            NguoiTaoPhieu = string.IsNullOrWhiteSpace(request.NguoiTaoPhieu) ? null : request.NguoiTaoPhieu,
-            NgayTaoPhieu = DateTime.Now,
+    return nextMaPhieu;
+}
 
-            NgayDat = request.NgayDat,
-            GioBatDau = request.GioBatDau,
-            GioKetThuc = request.GioKetThuc,
-
-            HinhThuc = request.HinhThuc,
-            TrangThai = "cho_xac_nhan",
-            TongTien = request.TongTien ?? 0m,
-            TinhTrangTt = "chua_tt"
-        };
-
-        _context.PhieuDatSans.Add(phieu);
-
-        // Ghi lịch đặt sân
-        var lich = new LichDatSan
-        {
-            MaSan = request.MaSan,
-            MaPhieu = nextMaPhieu,
-            Ngay = request.NgayDat,
-            GioBatDau = request.GioBatDau,
-            GioKetThuc = request.GioKetThuc
-        };
-
-        _context.LichDatSans.Add(lich);
-
-        await _context.SaveChangesAsync();
-        await tx.CommitAsync();
-
-        return nextMaPhieu;
-    }
 
     public async Task<List<BookingResponse>> GetBookingsByCustomerAsync(int maKh)
     {
