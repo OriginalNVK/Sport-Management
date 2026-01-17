@@ -1,27 +1,18 @@
-import { useEffect, useMemo, useState } from 'react';
-import { Users, Building2, Calendar, DollarSign, TrendingUp, Clock } from 'lucide-react';
-import { Card, CardContent, CardHeader, CardTitle } from './ui/card';
-import {
-  BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
-  LineChart, Line, PieChart, Pie, Cell
-} from 'recharts';
-import type { UserRole } from '../App';
+import { useEffect, useMemo, useState } from "react";
+import { Users, Building2, Calendar, DollarSign, TrendingUp, Clock } from "lucide-react";
+import { Card, CardContent, CardHeader, CardTitle } from "./ui/card";
+import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, LineChart, Line, PieChart, Pie, Cell } from "recharts";
+import type { UserRole } from "../App";
 
-import {
-  fetchDashboardSummary,
-  type ReportFilterRequest,
-  type ReportSummaryResponse,
-} from '../services/DashboardService';
-import { formatVnd, pickColor, toIsoDate } from '../services/DashboardFormat';
+import { fetchDashboardSummary, type ReportFilterRequest, type ReportSummaryResponse } from "../services/DashboardService";
+import { formatVnd, pickColor, toIsoDate } from "../services/DashboardFormat";
 
 interface DashboardProps {
   userRole: UserRole;
 }
 
 export function Dashboard({ userRole }: DashboardProps) {
-  console.log("DASHBOARD.tsx IS RUNNING ✅", { userRole });
-
-  if (userRole === 'customer') return <CustomerDashboard />;
+  if (userRole === "customer") return <CustomerDashboard />;
   return <ManagerDashboard />;
 }
 
@@ -30,12 +21,12 @@ export function Dashboard({ userRole }: DashboardProps) {
 // =======================
 function CustomerDashboard() {
   const schedules = [
-    { id: 1, sport: 'Football', field: 'Field A', date: '2025-12-05', time: '14:00 - 16:00', status: 'confirmed' },
-    { id: 2, sport: 'Volleyball', field: 'Court B', date: '2025-12-08', time: '10:00 - 12:00', status: 'confirmed' },
-    { id: 3, sport: 'Basketball', field: 'Court C', date: '2025-12-10', time: '18:00 - 20:00', status: 'pending' },
+    { id: 1, sport: "Football", field: "Field A", date: "2025-12-05", time: "14:00 - 16:00", status: "confirmed" },
+    { id: 2, sport: "Volleyball", field: "Court B", date: "2025-12-08", time: "10:00 - 12:00", status: "confirmed" },
+    { id: 3, sport: "Basketball", field: "Court C", date: "2025-12-10", time: "18:00 - 20:00", status: "pending" },
   ];
 
-  const invoiceSummary = { totalPaid: 450, totalPending: 150, nextDue: '2025-12-10' };
+  const invoiceSummary = { totalPaid: 450, totalPending: 150, nextDue: "2025-12-10" };
 
   return (
     <div className="p-8">
@@ -46,10 +37,7 @@ function CustomerDashboard() {
         <h2 className="mb-4 text-gray-700">Your Schedule</h2>
         <div className="space-y-4">
           {schedules.map((schedule) => (
-            <div
-              key={schedule.id}
-              className="border border-gray-200 rounded-lg p-6 bg-white shadow-sm"
-            >
+            <div key={schedule.id} className="border border-gray-200 rounded-lg p-6 bg-white shadow-sm">
               <div className="flex items-start justify-between">
                 <div className="flex-1">
                   <div className="flex items-center gap-3 mb-2">
@@ -66,24 +54,14 @@ function CustomerDashboard() {
                     </span>
                   </div>
 
-                  <span
-                    className={`inline-block mt-3 px-3 py-1 rounded-full text-sm ${
-                      schedule.status === 'confirmed'
-                        ? 'bg-green-100 text-green-800'
-                        : 'bg-yellow-100 text-yellow-800'
-                    }`}
-                  >
+                  <span className={`inline-block mt-3 px-3 py-1 rounded-full text-sm ${schedule.status === "confirmed" ? "bg-green-100 text-green-800" : "bg-yellow-100 text-yellow-800"}`}>
                     {schedule.status}
                   </span>
                 </div>
 
                 <div className="flex gap-2">
-                  <button className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors">
-                    Update
-                  </button>
-                  <button className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors">
-                    Cancel
-                  </button>
+                  <button className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors">Update</button>
+                  <button className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors">Cancel</button>
                 </div>
               </div>
             </div>
@@ -148,25 +126,25 @@ function ManagerDashboard() {
     toDate: toIsoDate(today),
     maCoSo: null,
     maLoaiSan: null,
-    operatingStart: '06:00:00',
-    operatingEnd: '23:00:00',
+    operatingStart: "06:00:00",
+    operatingEnd: "23:00:00",
   }));
 
   const [summary, setSummary] = useState<ReportSummaryResponse | null>(null);
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string>('');
+  const [error, setError] = useState<string>("");
 
-  const token = localStorage.getItem('access_token') ?? undefined;
+  const token = localStorage.getItem("access_token") ?? undefined;
 
   const load = async () => {
     setLoading(true);
-    setError('');
+    setError("");
     try {
       const res = await fetchDashboardSummary(filter, token);
       setSummary(res);
     } catch (e: any) {
       setSummary(null);
-      setError(e?.message ?? 'Không thể tải dashboard');
+      setError(e?.message ?? "Không thể tải dashboard");
     } finally {
       setLoading(false);
     }
@@ -252,8 +230,8 @@ function ManagerDashboard() {
                   <input
                     type="number"
                     className="mt-1 w-full rounded-lg border border-gray-200 px-3 py-2 bg-white"
-                    value={filter.maCoSo ?? ''}
-                    onChange={(e) => setFilter((p) => ({ ...p, maCoSo: e.target.value === '' ? null : Number(e.target.value) }))}
+                    value={filter.maCoSo ?? ""}
+                    onChange={(e) => setFilter((p) => ({ ...p, maCoSo: e.target.value === "" ? null : Number(e.target.value) }))}
                     placeholder="e.g. 1"
                   />
                 </label>
@@ -263,20 +241,16 @@ function ManagerDashboard() {
                   <input
                     type="number"
                     className="mt-1 w-full rounded-lg border border-gray-200 px-3 py-2 bg-white"
-                    value={filter.maLoaiSan ?? ''}
-                    onChange={(e) => setFilter((p) => ({ ...p, maLoaiSan: e.target.value === '' ? null : Number(e.target.value) }))}
+                    value={filter.maLoaiSan ?? ""}
+                    onChange={(e) => setFilter((p) => ({ ...p, maLoaiSan: e.target.value === "" ? null : Number(e.target.value) }))}
                     placeholder="e.g. 1"
                   />
                 </label>
               </div>
 
               <div className="mt-4 flex items-center justify-between gap-3">
-                <div className="text-sm text-gray-600">{loading ? 'Loading...' : 'Ready'}</div>
-                <button
-                  onClick={load}
-                  className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors disabled:opacity-60"
-                  disabled={loading}
-                >
+                <div className="text-sm text-gray-600">{loading ? "Loading..." : "Ready"}</div>
+                <button onClick={load} className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors disabled:opacity-60" disabled={loading}>
                   Apply
                 </button>
               </div>
@@ -303,7 +277,7 @@ function ManagerDashboard() {
             <Building2 className="w-5 h-5 text-green-500" />
           </CardHeader>
           <CardContent>
-            <p className="text-gray-900">{activeStadiums.toLocaleString('vi-VN')}</p>
+            <p className="text-gray-900">{activeStadiums.toLocaleString("vi-VN")}</p>
             <div className="flex items-center gap-1 text-green-600 text-sm mt-1">
               <TrendingUp className="w-4 h-4" />
               <span>Utilization-based</span>
@@ -317,7 +291,7 @@ function ManagerDashboard() {
             <Calendar className="w-5 h-5 text-orange-500" />
           </CardHeader>
           <CardContent>
-            <p className="text-gray-900">{totalBookings.toLocaleString('vi-VN')}</p>
+            <p className="text-gray-900">{totalBookings.toLocaleString("vi-VN")}</p>
             <div className="text-gray-500 text-sm mt-1">
               Online: {summary?.datOnlineTrucTiep.online ?? 0} · Trực tiếp: {summary?.datOnlineTrucTiep.trucTiep ?? 0}
             </div>
@@ -338,7 +312,9 @@ function ManagerDashboard() {
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
         <Card className="shadow-sm">
-          <CardHeader><CardTitle>Booking Trends</CardTitle></CardHeader>
+          <CardHeader>
+            <CardTitle>Booking Trends</CardTitle>
+          </CardHeader>
           <CardContent>
             <ResponsiveContainer width="100%" height={300}>
               <BarChart data={bookingData}>
@@ -349,14 +325,14 @@ function ManagerDashboard() {
                 <Bar dataKey="bookings" fill="#3b82f6" radius={[8, 8, 0, 0]} />
               </BarChart>
             </ResponsiveContainer>
-            <p className="text-xs text-gray-500 mt-2">
-              *Chart đang hiển thị số booking theo cơ sở.
-            </p>
+            <p className="text-xs text-gray-500 mt-2">*Chart đang hiển thị số booking theo cơ sở.</p>
           </CardContent>
         </Card>
 
         <Card className="shadow-sm">
-          <CardHeader><CardTitle>Revenue Growth</CardTitle></CardHeader>
+          <CardHeader>
+            <CardTitle>Revenue Growth</CardTitle>
+          </CardHeader>
           <CardContent>
             <ResponsiveContainer width="100%" height={300}>
               <LineChart data={revenueData}>
@@ -367,29 +343,20 @@ function ManagerDashboard() {
                 <Line type="monotone" dataKey="revenue" stroke="#10b981" strokeWidth={3} />
               </LineChart>
             </ResponsiveContainer>
-            <p className="text-xs text-gray-500 mt-2">
-              *Chart đang hiển thị doanh thu theo cơ sở.
-            </p>
+            <p className="text-xs text-gray-500 mt-2">*Chart đang hiển thị doanh thu theo cơ sở.</p>
           </CardContent>
         </Card>
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         <Card className="shadow-sm">
-          <CardHeader><CardTitle>Stadium Usage by Type</CardTitle></CardHeader>
+          <CardHeader>
+            <CardTitle>Stadium Usage by Type</CardTitle>
+          </CardHeader>
           <CardContent className="flex justify-center">
             <ResponsiveContainer width="100%" height={250}>
               <PieChart>
-                <Pie
-                  data={stadiumUsage}
-                  cx="50%"
-                  cy="50%"
-                  innerRadius={60}
-                  outerRadius={90}
-                  paddingAngle={5}
-                  dataKey="value"
-                  nameKey="name"
-                >
+                <Pie data={stadiumUsage} cx="50%" cy="50%" innerRadius={60} outerRadius={90} paddingAngle={5} dataKey="value" nameKey="name">
                   {stadiumUsage.map((entry, index) => (
                     <Cell key={`cell-${index}`} fill={entry.color} />
                   ))}
@@ -401,13 +368,17 @@ function ManagerDashboard() {
         </Card>
 
         <Card className="lg:col-span-2 shadow-sm">
-          <CardHeader><CardTitle>Recent Activities</CardTitle></CardHeader>
+          <CardHeader>
+            <CardTitle>Recent Activities</CardTitle>
+          </CardHeader>
           <CardContent>
             <div className="space-y-4">
               <div className="flex items-center gap-4 p-3 bg-gray-50 rounded-lg">
                 <div className="w-2 h-2 rounded-full bg-red-500" />
                 <div className="flex-1">
-                  <p className="text-gray-900">Canceled bookings: <b>{summary?.huyNoShow.soLuongHuy ?? 0}</b></p>
+                  <p className="text-gray-900">
+                    Canceled bookings: <b>{summary?.huyNoShow.soLuongHuy ?? 0}</b>
+                  </p>
                   <p className="text-gray-500 text-sm">Penalty: {formatVnd(summary?.huyNoShow.tongTienPhatHuy ?? 0)}</p>
                 </div>
               </div>
@@ -415,7 +386,9 @@ function ManagerDashboard() {
               <div className="flex items-center gap-4 p-3 bg-gray-50 rounded-lg">
                 <div className="w-2 h-2 rounded-full bg-orange-500" />
                 <div className="flex-1">
-                  <p className="text-gray-900">No-show: <b>{summary?.huyNoShow.soLuongNoShow ?? 0}</b></p>
+                  <p className="text-gray-900">
+                    No-show: <b>{summary?.huyNoShow.soLuongNoShow ?? 0}</b>
+                  </p>
                   <p className="text-gray-500 text-sm">Penalty: {formatVnd(summary?.huyNoShow.tongTienPhatNoShow ?? 0)}</p>
                 </div>
               </div>
@@ -434,11 +407,9 @@ function ManagerDashboard() {
                 <div className="w-2 h-2 rounded-full bg-green-500" />
                 <div className="flex-1">
                   <p className="text-gray-900">
-                    Top utilization: <b>{summary?.tyLeSuDungTheoCoSo?.[0]?.tenCoSo ?? 'N/A'}</b>
+                    Top utilization: <b>{summary?.tyLeSuDungTheoCoSo?.[0]?.tenCoSo ?? "N/A"}</b>
                   </p>
-                  <p className="text-gray-500 text-sm">
-                    {summary?.tyLeSuDungTheoCoSo?.[0] ? `${(summary.tyLeSuDungTheoCoSo[0].tyLeSuDung * 100).toFixed(1)}%` : ''}
-                  </p>
+                  <p className="text-gray-500 text-sm">{summary?.tyLeSuDungTheoCoSo?.[0] ? `${(summary.tyLeSuDungTheoCoSo[0].tyLeSuDung * 100).toFixed(1)}%` : ""}</p>
                 </div>
               </div>
             </div>
