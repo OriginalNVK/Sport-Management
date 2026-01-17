@@ -14,6 +14,7 @@ public partial class SportContext : DbContext
         : base(options)
     {
     }
+		public virtual DbSet<SanHold> SanHolds { get; set; }
 
     public virtual DbSet<BangGium> BangGiums { get; set; }
 
@@ -71,6 +72,35 @@ public partial class SportContext : DbContext
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
+				modelBuilder.Entity<SanHold>(entity =>
+				{
+						entity.ToTable("san_hold");
+
+						entity.HasKey(e => e.HoldToken);         
+						entity.Property(e => e.HoldToken)
+									.HasColumnName("HoldToken");
+
+						entity.Property(e => e.MaSan);
+
+						entity.Property(e => e.NgayDat)
+									.HasColumnType("date");
+
+						entity.Property(e => e.GioBatDau)
+									.HasColumnType("time(0)");
+
+						entity.Property(e => e.GioKetThuc)
+									.HasColumnType("time(0)");
+
+						entity.Property(e => e.CreatedAt)
+									.HasColumnType("datetime2");
+
+						entity.Property(e => e.ExpiresAt)
+									.HasColumnType("datetime2");
+
+						entity.Property(e => e.Owner)
+									.HasMaxLength(50);
+				});
+
         modelBuilder.Entity<BangGium>(entity =>
         {
             entity.HasKey(e => e.MaGia).HasName("PK__bang_gia__072D17D6515F408D");

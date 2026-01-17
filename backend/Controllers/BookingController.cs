@@ -116,7 +116,40 @@ public class BookingsController : ControllerBase
 						return StatusCode(500, new { success = false, message = "Đã xảy ra lỗi khi lấy tên đăng nhập" });
 				}
 		}
+		[HttpPost("hold")]
+		public async Task<IActionResult> HoldSan([FromBody] HoldSanRequest request)
+		{
+				try
+				{
+						var (token, expiresAt) = await _bookingService.HoldSanAsync(request);
+						return Ok(new { success = true, message = "Giữ chỗ thành công", data = new { holdToken = token, expiresAt } });
+				}
+				catch (InvalidOperationException ex)
+				{
+						return Conflict(new { success = false, message = ex.Message });
+				}
+		}
 
+		[HttpDelete("hold/{holdToken:guid}")]
+		public async Task<IActionResult> ReleaseHold([FromRoute] Guid holdToken)
+		{
+				await _bookingService.ReleaseHoldAsync(holdToken);
+				return Ok(new { success = true, message = "Đã nhả giữ chỗ" });
+		}
+
+		[HttpPost("confirm")]
+		public async Task<IActionResult> ConfirmBooking([FromBody] ConfirmBookingRequest request)
+		{
+				try
+				{
+						var maPhieu = await _bookingService.ConfirmBookingAsync(request);
+						return Ok(new { success = true, message = "Đặt sân thành công", data = new { ma_phieu = maPhieu } });
+				}
+				catch (InvalidOperationException ex)
+				{
+						return Conflict(new { success = false, message = ex.Message });
+				}
+		}
     // 2) Tạo phiếu đặt sân + ghi lịch đặt
     [HttpPost]
     [ProducesResponseType(StatusCodes.Status200OK)]
@@ -125,9 +158,6 @@ public class BookingsController : ControllerBase
     {
         try
         {
-            // Nếu bạn dùng JWT và claim name:
-            // var username = User?.Identity?.Name;
-
             var maPhieu = await _bookingService.CreateBookingAsync(request);
 
             _logger.LogInformation("Tạo phiếu đặt sân thành công. ma_phieu={MaPhieu}", maPhieu);

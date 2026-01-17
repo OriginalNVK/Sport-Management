@@ -98,7 +98,7 @@ public class BookingService : IBookingService
         throw new InvalidOperationException($"Sân {request.MaSan} hiện không khả dụng (tình trạng: {san.TinhTrang})");
 
     // ==========================
-    // (NEW) Check giới hạn 2 booking / khách / ngày
+    // Check giới hạn 2 booking / khách / ngày
     // Không tính phiếu đã hủy
     // ==========================
     var ngayDatDate = request.NgayDat;
@@ -287,5 +287,153 @@ public class BookingService : IBookingService
     {
         if (end <= start)
             throw new InvalidOperationException("Giờ kết thúc phải lớn hơn giờ bắt đầu.");
+    }
+		private const int HOLD_SECONDS = 60;
+
+    public async Task<(Guid holdToken, DateTime expiresAt)> HoldSanAsync(HoldSanRequest req)
+    {
+        ValidateTimeRange(req.GioBatDau, req.GioKetThuc);
+
+        await using var tx = await _context.Database.BeginTransactionAsync(System.Data.IsolationLevel.Serializable);
+
+        var now = DateTime.UtcNow;
+        var expires = now.AddSeconds(HOLD_SECONDS);
+
+        // dọn hold hết hạn
+        await _context.Database.ExecuteSqlRawAsync("DELETE FROM dbo.SAN_HOLD WHERE ExpiresAt <= {0}", now);
+
+        // check sân
+        var san = await _context.Sans.FirstOrDefaultAsync(s => s.MaSan == req.MaSan);
+        if (san == null) throw new InvalidOperationException($"Không tìm thấy sân với mã {req.MaSan}");
+        if (!string.Equals((san.TinhTrang ?? "").Trim(), "con_trong", StringComparison.OrdinalIgnoreCase))
+            throw new InvalidOperationException($"Sân {req.MaSan} hiện không khả dụng.");
+
+        // check trùng lịch thật
+        var conflictBooking = await _context.LichDatSans.AnyAsync(x =>
+            x.MaSan == req.MaSan &&
+            x.Ngay == req.NgayDat &&
+            req.GioBatDau < x.GioKetThuc &&
+            req.GioKetThuc > x.GioBatDau
+        );
+        if (conflictBooking)
+            throw new InvalidOperationException("Sân đã được đặt trong khung giờ này.");
+
+        // check trùng hold còn hiệu lực
+        var conflictHold = await _context.SanHolds.AnyAsync(h =>
+            h.MaSan == req.MaSan &&
+            h.NgayDat == req.NgayDat &&
+            h.ExpiresAt > now &&
+            req.GioBatDau < h.GioKetThuc &&
+            req.GioKetThuc > h.GioBatDau
+        );
+        if (conflictHold)
+            throw new InvalidOperationException("Sân đang được người khác giữ chỗ. Vui lòng thử lại sau.");
+
+        // insert hold
+        var token = Guid.NewGuid();
+        var hold = new SanHold
+        {
+            HoldToken = token,
+            MaSan = req.MaSan,
+            NgayDat = req.NgayDat,
+            GioBatDau = req.GioBatDau,
+            GioKetThuc = req.GioKetThuc,
+            Owner = string.IsNullOrWhiteSpace(req.Owner) ? null : req.Owner.Trim(),
+            CreatedAt = now,
+            ExpiresAt = expires
+        };
+
+        _context.SanHolds.Add(hold);
+        await _context.SaveChangesAsync();
+        await tx.CommitAsync();
+
+        return (token, expires);
+    }
+
+    public async Task ReleaseHoldAsync(Guid holdToken)
+    {
+        var hold = await _context.SanHolds.FirstOrDefaultAsync(h => h.HoldToken == holdToken);
+        if (hold == null) return;
+
+        _context.SanHolds.Remove(hold);
+        await _context.SaveChangesAsync();
+    }
+
+    public async Task<int> ConfirmBookingAsync(ConfirmBookingRequest req)
+    {
+        ValidateTimeRange(req.GioBatDau, req.GioKetThuc);
+
+        await using var tx = await _context.Database.BeginTransactionAsync(System.Data.IsolationLevel.Serializable);
+
+        var now = DateTime.UtcNow;
+
+        // dọn hold hết hạn
+        await _context.Database.ExecuteSqlRawAsync("DELETE FROM dbo.SAN_HOLD WHERE ExpiresAt <= {0}", now);
+
+        // check hold còn hạn + đúng thông tin
+        var hold = await _context.SanHolds.FirstOrDefaultAsync(h => h.HoldToken == req.HoldToken);
+        if (hold == null || hold.ExpiresAt <= now)
+            throw new InvalidOperationException("Giữ chỗ đã hết hạn. Vui lòng chọn sân lại.");
+
+        if (hold.MaSan != req.MaSan || hold.NgayDat != req.NgayDat || hold.GioBatDau != req.GioBatDau || hold.GioKetThuc != req.GioKetThuc)
+            throw new InvalidOperationException("Thông tin giữ chỗ không khớp.");
+
+        // (optional) mỗi khách tối đa 2 sân/ngày
+        var countToday = await _context.PhieuDatSans.CountAsync(p =>
+            p.MaKh == req.MaKh &&
+            p.NgayDat == req.NgayDat &&
+            p.TrangThai != "da_huy"
+        );
+        if (countToday >= 2)
+            throw new InvalidOperationException("Mỗi khách hàng chỉ được đặt tối đa 2 sân trong ngày.");
+
+        // check trùng lịch thật lần cuối
+        var conflict = await _context.LichDatSans.AnyAsync(x =>
+            x.MaSan == req.MaSan &&
+            x.Ngay == req.NgayDat &&
+            req.GioBatDau < x.GioKetThuc &&
+            req.GioKetThuc > x.GioBatDau
+        );
+        if (conflict)
+            throw new InvalidOperationException("Sân đã được đặt trong khung giờ này.");
+
+        // Gọi logic tạo booking hiện tại (copy y hệt) nhưng KHÔNG commit ở trong đó
+        // => ở đây mình gọi luôn code tương tự CreateBookingAsync nhưng bỏ tx riêng:
+        var maxMaPhieu = await _context.PhieuDatSans.MaxAsync(x => (int?)x.MaPhieu) ?? 0;
+        var nextMaPhieu = maxMaPhieu + 1;
+
+        var phieu = new PhieuDatSan
+        {
+            MaPhieu = nextMaPhieu,
+            MaKh = req.MaKh,
+            MaSan = req.MaSan,
+            NguoiTaoPhieu = string.IsNullOrWhiteSpace(req.NguoiTaoPhieu) ? null : req.NguoiTaoPhieu,
+            NgayTaoPhieu = DateTime.Now,
+            NgayDat = req.NgayDat,
+            GioBatDau = req.GioBatDau,
+            GioKetThuc = req.GioKetThuc,
+            HinhThuc = req.HinhThuc,
+            TrangThai = "cho_xac_nhan",
+            TongTien = req.TongTien ?? 0m,
+            TinhTrangTt = "chua_tt"
+        };
+        _context.PhieuDatSans.Add(phieu);
+
+        _context.LichDatSans.Add(new LichDatSan
+        {
+            MaSan = req.MaSan,
+            MaPhieu = nextMaPhieu,
+            Ngay = req.NgayDat,
+            GioBatDau = req.GioBatDau,
+            GioKetThuc = req.GioKetThuc
+        });
+
+        // xóa hold
+        _context.SanHolds.Remove(hold);
+
+        await _context.SaveChangesAsync();
+        await tx.CommitAsync();
+
+        return nextMaPhieu;
     }
 }

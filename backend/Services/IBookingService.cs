@@ -11,4 +11,8 @@ public interface IBookingService
     Task<List<UserBookingDto>> GetMyBookingsAsync(int? maKh, int? maNv);
     Task<ReceptionistCreatedResponse> GetReceptionistCreatedAsync(int maNv);
 
+		Task<(Guid holdToken, DateTime expiresAt)> HoldSanAsync(HoldSanRequest req);
+Task ReleaseHoldAsync(Guid holdToken);
+Task<int> ConfirmBookingAsync(ConfirmBookingRequest req);
+
 }

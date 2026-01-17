@@ -8,9 +8,10 @@ import type { UserRole, PageType } from "../App";
 import { getSans, type SanDto } from "../services/SanService";
 import { getLoaiSan, type LoaiSanDto } from "../services/LoaiSanService";
 import { checkAvailability, createBooking, getGia, getReceptionistCreated } from "../services/BookingService";
-
-// Nếu bạn chưa có 2 API này thì tạo (mình đã gửi code backend trước đó)
+import { holdSan, releaseHold, confirmBooking } from "../services/BookingService";
 import { findCustomerByPhone, type KhachHangDto } from "../services/KhachHangService";
+
+const ENABLE_HOLD = import.meta.env.VITE_ENABLE_HOLD === "true";
 
 interface BookingProps {
   userRole: UserRole;
@@ -112,6 +113,9 @@ export function Booking({ userRole, onNavigate }: BookingProps) {
   const [openConfirm, setOpenConfirm] = useState(false);
   const [selectedSan, setSelectedSan] = useState<SanDto | null>(null);
   const [confirmLoading, setConfirmLoading] = useState(false);
+
+  const [holdToken, setHoldToken] = useState<string | null>(null);
+  const [holdExpiresAt, setHoldExpiresAt] = useState<string | null>(null);
 
   const [priceInfo, setPriceInfo] = useState<{
     gia: number;
@@ -241,6 +245,8 @@ export function Booking({ userRole, onNavigate }: BookingProps) {
     }
 
     const loaiOfSan = loaiSans.find((ls) => ls.maLoai === s.maLoai);
+    let localHoldToken: string | null = null;
+
     if (!loaiOfSan) {
       alert("Không xác định được loại sân của sân này");
       return;
@@ -277,6 +283,34 @@ export function Booking({ userRole, onNavigate }: BookingProps) {
         return;
       }
 
+      if (ENABLE_HOLD) {
+        const owner = isLeTan ? `le_tan:${localStorage.getItem("maNv") ?? ""}` : `kh:${localStorage.getItem("maKh") ?? ""}`;
+
+        const holdRes = await holdSan(
+          {
+            maSan: s.maSan,
+            ngayDat,
+            gioBatDau: normalizeTime(gioBatDau),
+            gioKetThuc: normalizeTime(gioKetThuc),
+            owner,
+          },
+          token ?? undefined
+        );
+
+        if (!holdRes.success) {
+          alert(holdRes.message ?? "Không thể giữ chỗ sân");
+          setSelectedSan(null);
+          return;
+        }
+
+        localHoldToken = holdRes.data.holdToken;
+        setHoldToken(localHoldToken);
+        setHoldExpiresAt(holdRes.data.expiresAt);
+      } else {
+        setHoldToken(null);
+        setHoldExpiresAt(null);
+      }
+
       // get price preview
       const loaiNgay = getLoaiNgay(date);
       const khungGio = getKhungGio(gioBatDau);
@@ -302,9 +336,15 @@ export function Booking({ userRole, onNavigate }: BookingProps) {
 
       setOpenConfirm(true);
     } catch (e: any) {
+      const token = localStorage.getItem("token");
+
+      if (localHoldToken) await releaseHold(localHoldToken, token ?? undefined);
+
       alert(e?.message ?? "Lỗi chuẩn bị thông tin đặt sân");
       setSelectedSan(null);
       setPriceInfo(null);
+      setHoldToken(null);
+      setHoldExpiresAt(null);
     } finally {
       setConfirmLoading(false);
     }
@@ -315,6 +355,11 @@ export function Booking({ userRole, onNavigate }: BookingProps) {
   // ==========================
   async function handleConfirmBooking() {
     if (!selectedSan || !date) return;
+
+    if (ENABLE_HOLD && !holdToken) {
+      alert("Giữ chỗ đã hết hoặc chưa được tạo. Vui lòng chọn sân lại.");
+      return;
+    }
 
     const loaiOfSan = loaiSans.find((ls) => ls.maLoai === selectedSan.maLoai);
     if (!loaiOfSan) {
@@ -378,41 +423,91 @@ export function Booking({ userRole, onNavigate }: BookingProps) {
 
       const tongTien = priceInfo?.tongTien ?? 0;
 
-      const createRes = await createBooking(
-        {
-          maKh: resolvedMaKh,
-          maSan: selectedSan.maSan,
-          nguoiTaoPhieu,
-          ngayDat,
-          gioBatDau: normalizeTime(gioBatDau),
-          gioKetThuc: normalizeTime(gioKetThuc),
-          hinhThuc,
-          tongTien,
-        },
-        token ?? undefined
-      );
+      if (ENABLE_HOLD) {
+        if (!holdToken) {
+          alert("Giữ chỗ đã hết hoặc chưa được tạo. Vui lòng chọn sân lại.");
+          return;
+        }
 
-      if (!createRes.success) {
-        alert(createRes.message ?? "Đặt sân thất bại");
-        return;
+        const confirmRes = await confirmBooking(
+          {
+            maKh: resolvedMaKh,
+            maSan: selectedSan.maSan,
+            nguoiTaoPhieu,
+            ngayDat,
+            gioBatDau: normalizeTime(gioBatDau),
+            gioKetThuc: normalizeTime(gioKetThuc),
+            hinhThuc,
+            tongTien,
+            holdToken,
+          },
+          token ?? undefined
+        );
+
+        if (!confirmRes.success) {
+          alert(confirmRes.message ?? "Đặt sân thất bại");
+          return;
+        }
+
+        alert(`Đặt sân thành công! Mã phiếu: ${confirmRes.data?.ma_phieu}`);
+      } else {
+        // HOLD OFF: gọi createBooking như cũ
+        const createRes = await createBooking(
+          {
+            maKh: resolvedMaKh,
+            maSan: selectedSan.maSan,
+            nguoiTaoPhieu,
+            ngayDat,
+            gioBatDau: normalizeTime(gioBatDau),
+            gioKetThuc: normalizeTime(gioKetThuc),
+            hinhThuc,
+            tongTien,
+          },
+          token ?? undefined
+        );
+
+        if (!createRes.success) {
+          alert(createRes.message ?? "Đặt sân thất bại");
+          return;
+        }
+
+        alert(`Đặt sân thành công! Mã phiếu: ${createRes.data?.ma_phieu}`);
       }
 
-      alert(`Đặt sân thành công! Mã phiếu: ${createRes.data?.ma_phieu}`);
-
-      // reset
+      setHoldToken(null);
+      setHoldExpiresAt(null);
       setOpenConfirm(false);
       setSelectedSan(null);
       setPriceInfo(null);
       setAvailableSet(new Set());
     } catch (e: any) {
+      const token = localStorage.getItem("token");
+      if (holdToken) {
+        try {
+          await releaseHold(holdToken, token ?? undefined);
+        } catch {}
+      }
+      setHoldToken(null);
+      setHoldExpiresAt(null);
       alert(e?.message ?? "Lỗi khi đặt sân");
     } finally {
       setBooking(false);
     }
   }
 
-  function closeConfirm() {
+  async function closeConfirm() {
     if (booking) return;
+
+    const token = localStorage.getItem("token");
+
+    if (ENABLE_HOLD && holdToken) {
+      try {
+        await releaseHold(holdToken, token ?? undefined);
+      } catch {}
+    }
+
+    setHoldToken(null);
+    setHoldExpiresAt(null);
     setOpenConfirm(false);
     setSelectedSan(null);
     setPriceInfo(null);
