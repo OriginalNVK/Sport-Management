@@ -13,7 +13,8 @@ import { ShiftManagement } from './components/ShiftManagement';
 import { LeaveRequestManagement } from './components/LeaveRequestManagement';
 import { MyLeaveRequests } from './components/MyLeaveRequests';
 import { FieldStatusManagement } from './components/FieldStatusManagement';
-export type PageType = 'dashboard' | 'users' | 'stadiums' | 'booking' | 'services' | 'payment' | 'profile' | 'shifts' | 'leave-requests' | 'my-leave-requests' | 'field-status';
+import { MyShifts } from './components/MyShifts';
+export type PageType = 'dashboard' | 'users' | 'stadiums' | 'booking' | 'services' | 'payment' | 'profile' | 'shifts' | 'leave-requests' | 'my-leave-requests' | 'field-status' | 'my-shifts';
 export type UserRole = 'customer' | 'manager' | 'receptionist' | 'staff';
 
 export default function App() {
@@ -112,6 +113,8 @@ export default function App() {
         return <MyLeaveRequests />;
       case 'field-status':
         return <FieldStatusManagement />;
+      case 'my-shifts':
+        return <MyShifts />;
       default:
         return <Dashboard userRole={userRole} />;
     }
