@@ -72,8 +72,17 @@ const selectedItems = useMemo(() => {
   const [selectedPhieuId, setSelectedPhieuId] = useState<number | ''>('');
   const [batchLoading, setBatchLoading] = useState(false);
 
+  const [selectedMaSan, setSelectedMaSan] = useState<number | null>(null);
 
-  // gọi API khi component mount
+  const handleSelectPhieu = (e: React.ChangeEvent<HTMLSelectElement>) => {
+    const maPhieu = Number(e.target.value);
+    setSelectedPhieuId(maPhieu);
+
+    const found = bookings.find(b => b.maPhieu === maPhieu);
+    setSelectedMaSan(found?.maSan ?? null);
+  };
+
+
   useEffect(() => {
     let mounted = true;
 
@@ -82,12 +91,13 @@ const selectedItems = useMemo(() => {
         setLoading(true);
         setError(null);
 
-        const {data, count} = await bookingExtraService.getServiceList();
+        const { data, count } = await bookingExtraService.getServiceList(
+          selectedMaSan ?? 1
+        );
+
         if (mounted) setServices(data);
       } catch (e: any) {
-        if (mounted) {
-          setError(e?.message || 'Không tải được danh sách dịch vụ');
-        }
+        if (mounted) setError(e?.message || 'Không tải được dịch vụ');
       } finally {
         if (mounted) setLoading(false);
       }
@@ -96,7 +106,8 @@ const selectedItems = useMemo(() => {
     return () => {
       mounted = false;
     };
-  }, []);
+  }, [selectedMaSan]); // ✅ QUAN TRỌNG
+
 
   useEffect(() => {
   if (userRole !== 'customer') return;
@@ -108,7 +119,25 @@ const selectedItems = useMemo(() => {
     try {
       const res = await getBookingsByCustomer(maKh);
       const list = Array.isArray(res) ? res : (res as any)?.data ?? [];
-      setBookings(list);
+       // 👉 Lấy ngày hiện tại (00:00:00)
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+
+      // 👉 Lọc + sort
+      const filteredAndSorted = list
+        .filter((b) => {
+          if (!b.ngayDat) return false;
+          const bookingDate = new Date(b.ngayDat);
+          bookingDate.setHours(0, 0, 0, 0);
+          return bookingDate > today;
+        })
+        .sort((a, b) => {
+          const da = new Date(`${a.ngayDat}T${a.gioBatDau ?? '00:00'}`);
+          const db = new Date(`${b.ngayDat}T${b.gioBatDau ?? '00:00'}`);
+          return da.getTime() - db.getTime(); // ASC
+        });
+
+      setBookings(filteredAndSorted);
 
       if (list.length > 0) setSelectedPhieuId(list[0].maPhieu);
     } catch (e) {
@@ -118,6 +147,7 @@ const selectedItems = useMemo(() => {
 }, [userRole]);
 
  console.log('bookings',  bookings);
+//  console.log('makh',  localStorage.getItem('maKh'));
   const filteredServices = filter === 'All' 
     ? services 
     : services.filter(s => s.loaiDv === filter);
@@ -155,7 +185,7 @@ const selectedItems = useMemo(() => {
     alert('Vui lòng nhập số lượng ít nhất 1 dịch vụ');
     return;
   }
-
+  
   try {
     setBatchLoading(true);
 
@@ -191,10 +221,11 @@ const selectedItems = useMemo(() => {
 
     <select
       value={selectedPhieuId}
-      onChange={(e) => setSelectedPhieuId(Number(e.target.value))}
+      // onChange={(e) => setSelectedPhieuId(Number(e.target.value))}
+      onChange={handleSelectPhieu}
       className="border border-gray-300 rounded-md px-3 py-2 bg-white"
     >
-      {bookings.length === 0 && <option value="">(Chưa có hóa đơn)</option>}
+      {bookings.length === 0 && <option value="">(Chưa có phiếu đặt sân)</option>}
       {bookings.map((inv) => (
         <option key={inv.maPhieu} value={inv.maPhieu}>
           # - Phiếu {inv.maPhieu} - Sân {inv.maSan} - Ngày {inv.ngayDat} - Giờ bắt đầu: {inv.gioBatDau} - Giờ kết thúc: {inv.gioKetThuc} - Trạng thái: {inv.tinhTrangTt === 'chua_tt' ? 'Chưa thanh toán' : inv.tinhTrangTt === 'da_tt' ? 'Đã thanh toán' : 'Hoàn tiền'}
@@ -212,6 +243,7 @@ const selectedItems = useMemo(() => {
           {services.map((service) => {
             // const Icon = service.icon!;
             const Icon = Wrench;
+            if (service.trangThai !== 'hoat_dong') {return null;}
             return (
               <div
                 key={service.maDv}
@@ -230,7 +262,7 @@ const selectedItems = useMemo(() => {
                           : 'bg-yellow-100 text-yellow-800'
                       }`}
                     >
-                      {service.trangThai === 'hoat_dong' ? 'Available' : 'Unavailable'}
+                      {service.trangThai === 'hoat_dong' ? 'Hoạt động' : 'Ngừng hoạt động'}
                     </span>
                   </div>
                 </div>
@@ -238,15 +270,23 @@ const selectedItems = useMemo(() => {
                 <p className="text-gray-600 mb-4">{service.tenDv}</p>
                 <div className="space-y-2 mb-4">
                   <div className="flex justify-between items-center">
-                    <span className="text-gray-600">Price:</span>
-                    <span className="text-xl text-gray-900">${service.donGia}</span>
+                    <span className="text-gray-600">Giá:</span>
+                    <span className="text-xl text-gray-900">{service.donGia}₫</span>
                   </div>
                   {/* <div className="flex justify-between items-center">
-                    <span className="text-gray-600">Unit:</span>
+                    <span className="text-gray-600">Đơn vị:</span>
                     <span className="text-gray-900">{unitList[service.donVi ?? 'cai']}</span>
                   </div> */}
                   <div className="flex justify-between items-center">
-  <span className="text-gray-600">Unit:</span>
+      <span className="text-gray-600">Số lượng còn:</span>
+      <span className="text-xl text-gray-900">{service.soLuongTon} 
+        <span className="text-gray-600 ml-2">
+      {unitList[service.donVi ?? 'Cái']}
+    </span></span>
+      
+    </div>
+                  <div className="flex justify-between items-center">
+  <span className="text-gray-600">Số lượng thuê:</span>
 
   <div className="flex items-center gap-2">
     {/* input số lượng */}
@@ -270,14 +310,9 @@ const selectedItems = useMemo(() => {
   className="w-20 border border-gray-300 rounded-md px-2 py-1 text-right"
 />
 
-    {/* đơn vị */}
-    <span className="text-gray-900">
-      {unitList[service.donVi ?? 'cai']}
-    </span>
   </div>
 
 </div>
-
                 </div>
 
                 {/* <button
@@ -322,7 +357,7 @@ const selectedItems = useMemo(() => {
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-gray-600 text-sm">Total Services</p>
-                <p className="text-gray-900 mt-1">32</p>
+                <p className="text-gray-900 mt-1">{services.length}</p>
               </div>
               <div className="w-12 h-12 bg-blue-50 rounded-full flex items-center justify-center">
                 <Wrench className="w-6 h-6 text-blue-600" />
@@ -336,7 +371,7 @@ const selectedItems = useMemo(() => {
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-gray-600 text-sm">Active Services</p>
-                <p className="text-gray-900 mt-1">28</p>
+                <p className="text-gray-900 mt-1">{services.filter(service => service.trangThai === 'hoat_dong').length}</p>
               </div>
               <div className="w-12 h-12 bg-green-50 rounded-full flex items-center justify-center">
                 <Wrench className="w-6 h-6 text-green-600" />

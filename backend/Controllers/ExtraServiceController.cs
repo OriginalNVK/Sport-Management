@@ -126,11 +126,11 @@ public class BookingExtrasController : ControllerBase
             return StatusCode(500, new { success = false, message = "Đã xảy ra lỗi khi lấy thông tin dịch vụ" });
         }
     }
-    // GET: /api/v1/bookingextras/services
-    [HttpGet("services")]
-    public async Task<ActionResult<object>> GetServiceList()
+    // GET: /api/v1/bookingextras/services/{maCoSo}
+    [HttpGet("services/{maCoSo}")]
+    public async Task<ActionResult<object>> GetServiceList(int maCoSo)
     {
-        var data = await _service.GetServiceListAsync();
+        var data = await _service.GetServiceListAsync(maCoSo);
         return Ok(new
         {
             success = true,

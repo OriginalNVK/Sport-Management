@@ -13,6 +13,6 @@ public interface IBookingExtrasService
     Task<bool> DeleteChiTietDvAsync(int ma_ct);
     Task<bool> DeleteLichHlvAsync(int ma_lich);
     Task<ServiceInfoResponse?> GetServiceInfoAsync(int maDv, int? maCoSo);
-    Task<List<ServiceInfoResponse>> GetServiceListAsync();
+    Task<List<ServiceInfoResponse>> GetServiceListAsync(int maCoSo);
 
 }

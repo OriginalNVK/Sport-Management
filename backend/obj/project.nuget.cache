@@ -1,6 +1,6 @@
 {
   "version": 2,
-  "dgSpecHash": "kNiBeS6NSK4=",
+  "dgSpecHash": "kce4ZyKqyrE=",
   "success": true,
   "projectFilePath": "D:\\KHTN\\Hệ quản trị CSDL\\Sport-Management\\backend\\backend.csproj",
   "expectedPackageFiles": [
@@ -80,15 +80,5 @@
     "C:\\Users\\ADMIN\\.nuget\\packages\\system.threading.channels\\7.0.0\\system.threading.channels.7.0.0.nupkg.sha512",
     "C:\\Users\\ADMIN\\.nuget\\packages\\system.threading.tasks.extensions\\4.5.4\\system.threading.tasks.extensions.4.5.4.nupkg.sha512"
   ],
-  "logs": [
-    {
-      "code": "Undefined",
-      "level": "Warning",
-      "message": "Problem reading the cache file D:\\KHTN\\Hệ quản trị CSDL\\Sport-Management\\backend\\obj\\project.nuget.cache : '<' is an invalid start of a property name. Expected a '\"'. Path: $ | LineNumber: 2 | BytePositionInLine: 0.",
-      "projectPath": "D:\\KHTN\\Hệ quản trị CSDL\\Sport-Management\\backend\\backend.csproj",
-      "warningLevel": 1,
-      "filePath": "D:\\KHTN\\Hệ quản trị CSDL\\Sport-Management\\backend\\backend.csproj",
-      "targetGraphs": []
-    }
-  ]
+  "logs": []
 }
