@@ -1,21 +1,15 @@
-import { useState, useEffect } from 'react';
-import { Building2, Wrench, AlertCircle, Loader2 } from 'lucide-react';
-import { Card, CardContent, CardHeader, CardTitle } from './ui/card';
-import { Button } from './ui/button';
-import { Badge } from './ui/badge';
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from './ui/select';
-import FieldService, { type FieldDto } from '../services/FieldService';
+import { useState, useEffect } from "react";
+import { Building2, Wrench, AlertCircle, Loader2 } from "lucide-react";
+import { Card, CardContent, CardHeader, CardTitle } from "./ui/card";
+import { Button } from "./ui/button";
+import { Badge } from "./ui/badge";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "./ui/select";
+import FieldService, { type FieldDto } from "../services/FieldService";
 
 export function FieldStatusManagement() {
   const [fields, setFields] = useState<FieldDto[]>([]);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState('');
+  const [error, setError] = useState("");
   const [updatingField, setUpdatingField] = useState<number | null>(null);
 
   useEffect(() => {
@@ -25,12 +19,12 @@ export function FieldStatusManagement() {
   const loadFields = async () => {
     try {
       setLoading(true);
-      setError('');
+      setError("");
       const data = await FieldService.getAllFields();
       setFields(data);
     } catch (err: any) {
-      setError(err.message || 'Không thể tải danh sách sân');
-      console.error('Error loading fields:', err);
+      setError(err.message || "Không thể tải danh sách sân");
+      console.error("Error loading fields:", err);
     } finally {
       setLoading(false);
     }
@@ -41,9 +35,9 @@ export function FieldStatusManagement() {
       setUpdatingField(maSan);
       await FieldService.updateFieldStatus(maSan, { tinhTrang });
       await loadFields();
-      alert('Cập nhật trạng thái sân thành công!');
+      alert("Cập nhật trạng thái sân thành công!");
     } catch (err: any) {
-      alert(err.message || 'Không thể cập nhật trạng thái sân');
+      alert(err.message || "Không thể cập nhật trạng thái sân");
     } finally {
       setUpdatingField(null);
     }
@@ -51,27 +45,27 @@ export function FieldStatusManagement() {
 
   const getStatusBadge = (tinhTrang?: string) => {
     const statusMap = {
-      san_sang: { label: 'Sẵn sàng', class: 'bg-green-100 text-green-700 border-green-200' },
-      dang_su_dung: { label: 'Đang sử dụng', class: 'bg-blue-100 text-blue-700 border-blue-200' },
-      bao_tri: { label: 'Bảo trì', class: 'bg-yellow-100 text-yellow-700 border-yellow-200' },
-      khong_kha_dung: { label: 'Không khả dụng', class: 'bg-red-100 text-red-700 border-red-200' },
+      con_trong: { label: "Sẵn sàng", class: "bg-green-100 text-green-700 border-green-200" },
+      dang_su_dung: { label: "Đang sử dụng", class: "bg-blue-100 text-blue-700 border-blue-200" },
+      bao_tri: { label: "Bảo trì", class: "bg-yellow-100 text-yellow-700 border-yellow-200" },
+      khong_kha_dung: { label: "Không khả dụng", class: "bg-red-100 text-red-700 border-red-200" },
     };
-    const status = statusMap[tinhTrang as keyof typeof statusMap] || statusMap.san_sang;
+    const status = statusMap[tinhTrang as keyof typeof statusMap] || statusMap.con_trong;
     return { label: status.label, className: status.class };
   };
 
   const statusOptions = [
-    { value: 'san_sang', label: 'Sẵn sàng', color: 'green' },
-    { value: 'dang_su_dung', label: 'Đang sử dụng', color: 'blue' },
-    { value: 'bao_tri', label: 'Bảo trì', color: 'yellow' },
-    { value: 'khong_kha_dung', label: 'Không khả dụng', color: 'red' },
+    { value: "con_trong", label: "Sẵn sàng", color: "green" },
+    { value: "dang_su_dung", label: "Đang sử dụng", color: "blue" },
+    { value: "bao_tri", label: "Bảo trì", color: "yellow" },
+    { value: "khong_kha_dung", label: "Không khả dụng", color: "red" },
   ];
 
   // Statistics
   const totalFields = fields.length;
-  const availableFields = fields.filter(f => f.tinhTrang === 'san_sang').length;
-  const maintenanceFields = fields.filter(f => f.tinhTrang === 'bao_tri').length;
-  const unavailableFields = fields.filter(f => f.tinhTrang === 'khong_kha_dung').length;
+  const availableFields = fields.filter((f) => f.tinhTrang === "san_sang").length;
+  const maintenanceFields = fields.filter((f) => f.tinhTrang === "bao_tri").length;
+  const unavailableFields = fields.filter((f) => f.tinhTrang === "khong_kha_dung").length;
 
   if (loading) {
     return (
@@ -183,29 +177,22 @@ export function FieldStatusManagement() {
               {fields.map((field) => {
                 const status = getStatusBadge(field.tinhTrang);
                 const isUpdating = updatingField === field.maSan;
-                
+
                 return (
-                  <div
-                    key={field.maSan}
-                    className="border rounded-lg p-4 hover:bg-gray-50 transition-colors"
-                  >
+                  <div key={field.maSan} className="border rounded-lg p-4 hover:bg-gray-50 transition-colors">
                     <div className="flex items-start justify-between gap-4">
                       <div className="flex-1">
                         <div className="flex items-center gap-3 mb-2">
                           <Building2 className="w-5 h-5 text-gray-600" />
-                          <h3 className="font-medium text-gray-900">
-                            {field.tenSan || `Sân #${field.maSan}`}
-                          </h3>
-                          <Badge className={status.className}>
-                            {status.label}
-                          </Badge>
+                          <h3 className="font-medium text-gray-900">{field.tenSan || `Sân #${field.maSan}`}</h3>
+                          <Badge className={status.className}>{status.label}</Badge>
                         </div>
                         <div className="text-sm text-gray-600 space-y-1 ml-8">
                           <p>
-                            <span className="font-medium">Loại sân:</span> {field.tenLoai || 'Không xác định'}
+                            <span className="font-medium">Loại sân:</span> {field.tenLoai || "Không xác định"}
                           </p>
                           <p>
-                            <span className="font-medium">Cơ sở:</span> {field.tenCoSo || 'Không xác định'}
+                            <span className="font-medium">Cơ sở:</span> {field.tenCoSo || "Không xác định"}
                           </p>
                           {field.sucChua && (
                             <p>
@@ -214,14 +201,10 @@ export function FieldStatusManagement() {
                           )}
                         </div>
                       </div>
-                      
+
                       <div className="flex flex-col gap-2 min-w-[200px]">
                         <p className="text-sm font-medium text-gray-700 mb-1">Thay đổi trạng thái:</p>
-                        <Select
-                          value={field.tinhTrang || 'san_sang'}
-                          onValueChange={(value) => handleUpdateStatus(field.maSan, value)}
-                          disabled={isUpdating}
-                        >
+                        <Select value={field.tinhTrang || "san_sang"} onValueChange={(value) => handleUpdateStatus(field.maSan, value)} disabled={isUpdating}>
                           <SelectTrigger className="w-full">
                             <SelectValue>
                               {isUpdating ? (
@@ -238,12 +221,11 @@ export function FieldStatusManagement() {
                             {statusOptions.map((option) => (
                               <SelectItem key={option.value} value={option.value}>
                                 <div className="flex items-center gap-2">
-                                  <div className={`w-3 h-3 rounded-full ${
-                                    option.color === 'green' ? 'bg-green-500' :
-                                    option.color === 'blue' ? 'bg-blue-500' :
-                                    option.color === 'yellow' ? 'bg-yellow-500' :
-                                    'bg-red-500'
-                                  }`} />
+                                  <div
+                                    className={`w-3 h-3 rounded-full ${
+                                      option.color === "green" ? "bg-green-500" : option.color === "blue" ? "bg-blue-500" : option.color === "yellow" ? "bg-yellow-500" : "bg-red-500"
+                                    }`}
+                                  />
                                   {option.label}
                                 </div>
                               </SelectItem>

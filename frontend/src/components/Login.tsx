@@ -29,14 +29,17 @@ export function Login({ onLogin, onShowRegister }: LoginProps) {
       });
 
       // Lưu token và user data vào localStorage
-      localStorage.setItem('access_token', response.token);
-      localStorage.setItem('refresh_token', response.refreshToken);
-      localStorage.setItem('user_data', JSON.stringify({
-        maNv: response.maNv,
-        maKh: response.maKh,
-        vaiTro: response.vaiTro,
-        tenDangNhap: username
-      }));
+      localStorage.setItem("access_token", response.token);
+      localStorage.setItem("refresh_token", response.refreshToken);
+      localStorage.setItem(
+        "user_data",
+        JSON.stringify({
+          maNv: response.maNv,
+          maKh: response.maKh,
+          vaiTro: response.vaiTro,
+          tenDangNhap: username,
+        })
+      );
 
       // Xác định role dựa trên vaiTro từ backend
       let role: "customer" | "manager" | "receptionist" | "staff" = "customer";

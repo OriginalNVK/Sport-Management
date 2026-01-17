@@ -30,10 +30,15 @@ export type CheckFieldAvailabilityRequest = {
   gioKetThuc: string; // HH:mm
 };
 
+export type ReceptionistCreatedResponse = {
+  maNv: number;
+  ten_dang_nhap: string;
+};
+
 export type CreateBookingRequest = {
   maKh: number;
   maSan: number;
-  nguoiTaoPhieu?: number | null;
+  nguoiTaoPhieu?: string | null;
   ngayDat: string; // YYYY-MM-DD
   gioBatDau: string; // HH:mm
   gioKetThuc: string; // HH:mm
@@ -74,21 +79,71 @@ export type UserBookingDto = {
   tinhTrangTt: string;
 };
 
+export type HoldSanRequest = {
+  maSan: number;
+  ngayDat: string; // YYYY-MM-DD
+  gioBatDau: string; // HH:mm
+  gioKetThuc: string; // HH:mm
+  owner?: string | null;
+};
+
+export type HoldSanResponse = {
+  holdToken: string;
+  expiresAt: string; // ISO string
+};
+
+export type ConfirmBookingRequest = CreateBookingRequest & {
+  holdToken: string;
+};
+
 type ApiWrap<T> = { success: boolean; message?: string; data: T };
 
-export async function checkAvailability(body: CheckFieldAvailabilityRequest) {
-  const res = await axios.post<ApiWrap<{ isAvailable: boolean }>>(`${API_BASE}/bookings/check-availability`, body);
+export async function checkAvailability(body: CheckFieldAvailabilityRequest, token?: string) {
+  const res = await axios.post<ApiWrap<{ isAvailable: boolean }>>(`${API_BASE}/bookings/check-availability`, body, token ? { headers: { Authorization: `Bearer ${token}` } } : undefined);
   return res.data;
 }
 
-export function getGia(maLoai: number, loaiNgay: string, khungGio: string) {
+export function getGia(maLoai: number, loaiNgay: string, khungGio: string, token?: string) {
   return axios.get(`${API_BASE}/bookings/price`, {
     params: { maLoai, loaiNgay, khungGio },
+    headers: token ? { Authorization: `Bearer ${token}` } : undefined,
+  });
+}
+
+export function getReceptionistCreated(maNv: number, token?: string) {
+  return axios.get(`${API_BASE}/bookings/receptionistcreated`, {
+    params: { maNv },
+    headers: token ? { Authorization: `Bearer ${token}` } : undefined,
   });
 }
 
 export async function createBooking(body: CreateBookingRequest, token?: string) {
   const res = await axios.post<ApiWrap<{ ma_phieu: number }>>(`${API_BASE}/bookings`, body, token ? { headers: { Authorization: `Bearer ${token}` } } : undefined);
+  return res.data;
+}
+
+export async function holdSan(body: HoldSanRequest, token?: string) {
+  try {
+    const res = await axios.post<ApiWrap<HoldSanResponse>>(`${API_BASE}/bookings/hold`, body, token ? { headers: { Authorization: `Bearer ${token}` } } : undefined);
+    return res.data;
+  } catch (e: any) {
+    return (
+      e?.response?.data ?? {
+        success: false,
+        message: e?.message ?? "Không thể giữ chỗ sân",
+        data: null,
+      }
+    );
+  }
+}
+
+export async function releaseHold(holdToken: string, token?: string) {
+  const res = await axios.delete<ApiWrap<null>>(`${API_BASE}/bookings/hold/${holdToken}`, token ? { headers: { Authorization: `Bearer ${token}` } } : undefined);
+  return res.data;
+}
+
+export async function confirmBooking(body: ConfirmBookingRequest, token?: string) {
+  const res = await axios.post<ApiWrap<{ ma_phieu: number }>>(`${API_BASE}/bookings/confirm`, body, token ? { headers: { Authorization: `Bearer ${token}` } } : undefined);
   return res.data;
 }
 
