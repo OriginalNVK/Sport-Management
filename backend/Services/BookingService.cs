@@ -182,6 +182,73 @@ public class BookingService : IBookingService
         return true;
     }
 
+    public async Task<List<UserBookingDto>> GetMyBookingsAsync(int? maKh, int? maNv)
+    {
+        var query = _context.PhieuDatSans
+            .Include(p => p.MaSanNavigation)
+                .ThenInclude(s => s!.MaLoaiNavigation)
+            .Include(p => p.HoaDons)
+            .AsQueryable();
+
+        // Filter by user type
+        if (maKh.HasValue)
+        {
+            query = query.Where(p => p.MaKh == maKh.Value);
+        }
+        else if (maNv.HasValue)
+        {
+            query = query.Where(p => p.NguoiTaoPhieu != null);
+        }
+
+        var bookings = await query
+            .OrderByDescending(p => p.NgayTaoPhieu)
+            .Select(p => new
+            {
+                p.MaPhieu,
+                p.NgayDat,
+                p.GioBatDau,
+                p.GioKetThuc,
+                p.TrangThai,
+                p.TongTien,
+                p.TinhTrangTt,
+                MaLoai = p.MaSanNavigation!.MaLoai,
+                TenSan = p.MaSanNavigation!.TenSan,
+                MaHoaDon = p.HoaDons.FirstOrDefault() != null ? p.HoaDons.FirstOrDefault()!.MaHd : (int?)null
+            })
+            .ToListAsync();
+
+        var result = bookings.Select(b =>
+        {
+            var loaiSan = b.MaLoai switch
+            {
+                1 => "Badminton",
+                2 => "Basketball",
+                3 => "Tennis",
+                4 => "Football",
+                _ => "Unknown"
+            };
+
+            var displayText = b.MaHoaDon.HasValue
+                ? $"Booking #{b.MaHoaDon} - {loaiSan} sân {b.TenSan}"
+                : $"Booking #{b.MaPhieu} - {loaiSan} sân {b.TenSan}";
+
+            return new UserBookingDto
+            {
+                MaPhieu = b.MaPhieu,
+                MaHoaDon = b.MaHoaDon,
+                DisplayText = displayText,
+                NgayDat = b.NgayDat,
+                GioBatDau = b.GioBatDau,
+                GioKetThuc = b.GioKetThuc,
+                TrangThai = b.TrangThai,
+                TongTien = b.TongTien,
+                TinhTrangTt = b.TinhTrangTt
+            };
+        }).ToList();
+
+        return result;
+    }
+
     private static void ValidateTimeRange(TimeOnly start, TimeOnly end)
     {
         if (end <= start)

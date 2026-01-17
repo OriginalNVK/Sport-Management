@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Mail, Lock, LogIn, Building2 } from "lucide-react";
+import { Lock, LogIn, Building2 } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "./ui/card";
 import { Input } from "./ui/input";
 import { Button } from "./ui/button";
@@ -7,12 +7,12 @@ import { Label } from "./ui/label";
 import { authService } from "../services/AuthService";
 
 interface LoginProps {
-  onLogin: (email: string, role: "customer" | "manager" | "receptionist" | "staff") => void;
+  onLogin: (username: string, role: "customer" | "manager" | "receptionist" | "staff") => void;
   onShowRegister?: () => void;
 }
 
 export function Login({ onLogin, onShowRegister }: LoginProps) {
-  const [email, setEmail] = useState("");
+  const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
   const [isLoading, setIsLoading] = useState(false);
@@ -24,9 +24,19 @@ export function Login({ onLogin, onShowRegister }: LoginProps) {
 
     try {
       const response = await authService.login({
-        tenDangNhap: email,
+        tenDangNhap: username,
         matKhau: password,
       });
+
+      // Lưu token và user data vào localStorage
+      localStorage.setItem('access_token', response.token);
+      localStorage.setItem('refresh_token', response.refreshToken);
+      localStorage.setItem('user_data', JSON.stringify({
+        maNv: response.maNv,
+        maKh: response.maKh,
+        vaiTro: response.vaiTro,
+        tenDangNhap: username
+      }));
 
       // Xác định role dựa trên vaiTro từ backend
       let role: "customer" | "manager" | "receptionist" | "staff" = "customer";
@@ -37,7 +47,7 @@ export function Login({ onLogin, onShowRegister }: LoginProps) {
       } else if (response.vaiTro === "nhan_vien") {
         role = "staff";
       }
-      onLogin(email, role);
+      onLogin(username, role);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Đăng nhập thất bại");
     } finally {
@@ -62,12 +72,11 @@ export function Login({ onLogin, onShowRegister }: LoginProps) {
             {error && <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg text-sm">{error}</div>}
 
             <div className="space-y-2">
-              <Label htmlFor="email" className="text-gray-700">
-                Email Address
+              <Label htmlFor="username" className="text-gray-700">
+                Username
               </Label>
               <div className="relative">
-                <Mail className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400" />
-                <Input id="email" type="email" placeholder="Enter your email" value={email} onChange={(e) => setEmail(e.target.value)} className="pl-10" required />
+                <Input id="username" type="text" placeholder="Enter your username" value={username} onChange={(e) => setUsername(e.target.value)} className="pl-10" required />
               </div>
             </div>
 

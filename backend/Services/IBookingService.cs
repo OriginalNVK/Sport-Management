@@ -8,4 +8,5 @@ public interface IBookingService
     Task<int> CreateBookingAsync(CreateBookingRequest request, string? nguoiTaoPhieu);
     Task<List<BookingResponse>> GetBookingsByCustomerAsync(int maKh);
     Task<bool> CancelBookingAsync(int maPhieu, string? nguoiHuy);
+    Task<List<UserBookingDto>> GetMyBookingsAsync(int? maKh, int? maNv);
 }

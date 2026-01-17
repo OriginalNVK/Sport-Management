@@ -62,6 +62,18 @@ export type BookingResponse = {
   tinhTrangTt: string;
 };
 
+export type UserBookingDto = {
+  maPhieu: number;
+  maHoaDon: number | null;
+  displayText: string;
+  ngayDat: string;
+  gioBatDau: string;
+  gioKetThuc: string;
+  trangThai: string;
+  tongTien: number;
+  tinhTrangTt: string;
+};
+
 type ApiWrap<T> = { success: boolean; message?: string; data: T };
 
 export async function checkAvailability(body: CheckFieldAvailabilityRequest) {
@@ -87,5 +99,10 @@ export async function getBookingsByCustomer(maKh: number, token?: string) {
 
 export async function cancelBooking(maPhieu: number, token?: string) {
   const res = await axios.delete<ApiWrap<unknown>>(`${API_BASE}/bookings/${maPhieu}`, token ? { headers: { Authorization: `Bearer ${token}` } } : undefined);
+  return res.data;
+}
+
+export async function getMyBookings(token?: string) {
+  const res = await axios.get<ApiWrap<UserBookingDto[]>>(`${API_BASE}/bookings/me`, token ? { headers: { Authorization: `Bearer ${token}` } } : undefined);
   return res.data;
 }

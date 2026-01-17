@@ -1,72 +1,92 @@
-import { CreditCard, DollarSign, TrendingUp, CheckCircle, Clock, XCircle, Trash2, Plus, FileText } from 'lucide-react';
+import { CreditCard, DollarSign, TrendingUp, CheckCircle, Clock, XCircle, Plus, FileText } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from './ui/card';
 import { Badge } from './ui/badge';
 import { Button } from './ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from './ui/tabs';
 import type { UserRole } from '../App';
-
-const transactions = [
-  {
-    id: 'TXN-001',
-    user: 'John Doe',
-    service: 'Champions Football Arena',
-    amount: 300,
-    status: 'Completed',
-    date: '2025-11-13 14:30',
-    method: 'Credit Card',
-  },
-  {
-    id: 'TXN-002',
-    user: 'Jane Smith',
-    service: 'Elite Basketball Court + Equipment',
-    amount: 185,
-    status: 'Completed',
-    date: '2025-11-13 12:15',
-    method: 'PayPal',
-  },
-  {
-    id: 'TXN-003',
-    user: 'Mike Johnson',
-    service: 'Personal Trainer Session',
-    amount: 80,
-    status: 'Pending',
-    date: '2025-11-13 10:45',
-    method: 'Credit Card',
-  },
-  {
-    id: 'TXN-004',
-    user: 'Sarah Williams',
-    service: 'Olympic Swimming Pool',
-    amount: 240,
-    status: 'Completed',
-    date: '2025-11-12 16:20',
-    method: 'Debit Card',
-  },
-  {
-    id: 'TXN-005',
-    user: 'Tom Brown',
-    service: 'Victory Stadium + Catering',
-    amount: 600,
-    status: 'Failed',
-    date: '2025-11-12 14:00',
-    method: 'Credit Card',
-  },
-  {
-    id: 'TXN-006',
-    user: 'Emily Davis',
-    service: 'Premium Tennis Center',
-    amount: 120,
-    status: 'Completed',
-    date: '2025-11-12 11:30',
-    method: 'PayPal',
-  },
-];
+import { useEffect, useState } from 'react';
+import { getMyBookings, type UserBookingDto } from '../services/BookingService';
+import { invoiceService, type InvoiceResponse } from '../services/InvoiceService';
 
 interface PaymentProps {
   userRole: UserRole;
 }
 
 export function Payment({ userRole }: PaymentProps) {
+  const [myBookings, setMyBookings] = useState<UserBookingDto[]>([]);
+  const [selectedBooking, setSelectedBooking] = useState<UserBookingDto | null>(null);
+  const [taxRate, setTaxRate] = useState(10);
+  const [discountCodes, setDiscountCodes] = useState('');
+  const [isLoadingBookings, setIsLoadingBookings] = useState(false);
+  const [paidInvoices, setPaidInvoices] = useState<InvoiceResponse[]>([]);
+  const [isLoadingInvoices, setIsLoadingInvoices] = useState(false);
+
+  // Fetch user's bookings
+  useEffect(() => {
+    const fetchMyBookings = async () => {
+      try {
+        setIsLoadingBookings(true);
+        const token = localStorage.getItem('token');
+        const response = await getMyBookings(token || undefined);
+        
+        if (response.success && response.data) {
+          setMyBookings(response.data);
+        }
+      } catch (error) {
+        console.error('Error fetching bookings:', error);
+      } finally {
+        setIsLoadingBookings(false);
+      }
+    };
+
+    if (userRole === 'customer') {
+      fetchMyBookings();
+    }
+  }, [userRole]);
+
+  // Fetch paid invoices
+  useEffect(() => {
+    const fetchPaidInvoices = async () => {
+      try {
+        setIsLoadingInvoices(true);
+        const invoices = await invoiceService.getPaidInvoices();
+        setPaidInvoices(invoices);
+      } catch (error) {
+        console.error('Error fetching paid invoices:', error);
+      } finally {
+        setIsLoadingInvoices(false);
+      }
+    };
+
+    if (userRole === 'customer') {
+      fetchPaidInvoices();
+    }
+  }, [userRole]);
+
+  const handleBookingChange = (maPhieu: number) => {
+    const booking = myBookings.find(b => b.maPhieu === maPhieu);
+    setSelectedBooking(booking || null);
+  };
+
+  const handleCreateInvoice = async () => {
+    if (!selectedBooking) {
+      alert('Vui lòng chọn booking');
+      return;
+    }
+
+    try {
+      // TODO: Call POST /invoices endpoint here
+      console.log('Creating invoice for booking:', selectedBooking);
+      console.log('Tax rate:', taxRate);
+      console.log('Discount codes:', discountCodes);
+      
+      alert('Tạo invoice thành công!');
+    } catch (error) {
+      console.error('Error creating invoice:', error);
+      alert('Lỗi khi tạo invoice');
+    }
+  };
+
   const getStatusBadge = (status: string) => {
     switch (status) {
       case 'Completed':
@@ -95,100 +115,28 @@ export function Payment({ userRole }: PaymentProps) {
 
   // Customer View - Customer Payment History
   if (userRole === 'customer') {
-    // Danh sách hóa đơn đã tạo (chưa thanh toán)
-    const invoices = [
-      {
-        id: 1,
-        invoice: 'INV-005',
-        description: 'Football Field D - 2 hours',
-        date: '2025-12-05',
-        dueDate: '2025-12-10',
-        amount: 110,
-        status: 'pending',
-      },
-      {
-        id: 2,
-        invoice: 'INV-006',
-        description: 'Volleyball Court B - 1 hour',
-        date: '2025-12-08',
-        dueDate: '2025-12-15',
-        amount: 35,
-        status: 'pending',
-      },
-      {
-        id: 3,
-        invoice: 'INV-007',
-        description: 'Basketball Court C - 2 hours',
-        date: '2025-12-10',
-        dueDate: '2025-12-17',
-        amount: 80,
-        status: 'pending',
-      },
-    ];
-
-    // Danh sách hóa đơn đã thanh toán
-    const paidInvoices = [
-      {
-        id: 1,
-        invoice: 'INV-001',
-        description: 'Football Field A - 2 hours',
-        date: '2025-11-20',
-        paidDate: '2025-11-21',
-        amount: 100,
-        status: 'paid',
-        method: 'Credit Card',
-      },
-      {
-        id: 2,
-        invoice: 'INV-002',
-        description: 'Volleyball Court B - 2 hours',
-        date: '2025-11-25',
-        paidDate: '2025-11-26',
-        amount: 70,
-        status: 'paid',
-        method: 'PayPal',
-      },
-      {
-        id: 3,
-        invoice: 'INV-003',
-        description: 'Basketball Court C - 3 hours',
-        date: '2025-11-28',
-        paidDate: '2025-11-29',
-        amount: 120,
-        status: 'paid',
-        method: 'Credit Card',
-      },
-      {
-        id: 4,
-        invoice: 'INV-004',
-        description: 'Tennis Court E - 2 hours',
-        date: '2025-11-30',
-        paidDate: '2025-12-01',
-        amount: 60,
-        status: 'paid',
-        method: 'Debit Card',
-      },
-    ];
-
     return (
       <div className="p-8">
-        <h1 className="mb-8 text-gray-800">Payment & Invoices</h1>
+        <div className="mb-8">
+          <h1 className="text-gray-800">My Payments</h1>
+          <p className="text-gray-600 mt-2">Manage your invoices and payment history</p>
+        </div>
 
         <Tabs defaultValue="invoices" className="w-full">
-          <TabsList className="grid w-full grid-cols-2 mb-8 bg-gray-100 border-2 border-gray-300">
+          <TabsList className="grid w-full grid-cols-2 mb-8">
             <TabsTrigger 
               value="invoices" 
-              className="flex items-center gap-2 data-[state=active]:bg-blue-600 data-[state=active]:text-white"
+              className="data-[state=active]:bg-blue-600 data-[state=active]:text-white"
             >
-              <FileText className="w-4 h-4" />
+              <FileText className="w-4 h-4 mr-2" />
               Invoices
             </TabsTrigger>
             <TabsTrigger 
-              value="payments" 
-              className="flex items-center gap-2 data-[state=active]:bg-blue-600 data-[state=active]:text-white"
+              value="history" 
+              className="data-[state=active]:bg-blue-600 data-[state=active]:text-white"
             >
               <CreditCard className="w-4 h-4" />
-              Payments
+              Payment History
             </TabsTrigger>
           </TabsList>
 
@@ -210,10 +158,19 @@ export function Payment({ userRole }: PaymentProps) {
                         <label className="block text-sm text-gray-600 mb-2">
                           Select Booking
                         </label>
-                        <select className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
-                          <option>Booking #001 - Football Field A</option>
-                          <option>Booking #002 - Basketball Court C</option>
-                          <option>Booking #003 - Tennis Court E</option>
+                        <select
+                          className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                          onChange={(e) => handleBookingChange(Number(e.target.value))}
+                          disabled={isLoadingBookings}
+                        >
+                          <option value="">
+                            {isLoadingBookings ? 'Loading bookings...' : 'Select a booking'}
+                          </option>
+                          {myBookings.map((booking) => (
+                            <option key={booking.maPhieu} value={booking.maPhieu}>
+                              {booking.displayText}
+                            </option>
+                          ))}
                         </select>
                       </div>
                       <div>
@@ -222,11 +179,48 @@ export function Payment({ userRole }: PaymentProps) {
                         </label>
                         <input
                           type="number"
-                          defaultValue="10"
+                          value={taxRate}
+                          onChange={(e) => setTaxRate(Number(e.target.value))}
                           className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
                         />
                       </div>
                     </div>
+
+                    {/* Hiển thị thông tin booking đã chọn */}
+                    {selectedBooking && (
+                      <div className="bg-blue-50 p-4 rounded-lg border border-blue-200">
+                        <h3 className="font-semibold text-gray-700 mb-3">Booking Details</h3>
+                        <div className="grid grid-cols-2 gap-3 text-sm">
+                          <div>
+                            <span className="text-gray-600">Ngày đặt:</span>
+                            <p className="font-medium">{selectedBooking.ngayDat}</p>
+                          </div>
+                          <div>
+                            <span className="text-gray-600">Thời gian:</span>
+                            <p className="font-medium">
+                              {selectedBooking.gioBatDau} - {selectedBooking.gioKetThuc}
+                            </p>
+                          </div>
+                          <div>
+                            <span className="text-gray-600">Tổng tiền:</span>
+                            <p className="font-medium text-blue-600">
+                              ${selectedBooking.tongTien?.toLocaleString()}
+                            </p>
+                          </div>
+                          <div>
+                            <span className="text-gray-600">Trạng thái:</span>
+                            <Badge className={`${
+                              selectedBooking.trangThai === 'da_xac_nhan' 
+                                ? 'bg-green-100 text-green-700' 
+                                : 'bg-yellow-100 text-yellow-700'
+                            }`}>
+                              {selectedBooking.trangThai}
+                            </Badge>
+                          </div>
+                        </div>
+                      </div>
+                    )}
+
                     <div>
                       <label className="block text-sm text-gray-600 mb-2">
                         Discount Codes (Optional)
@@ -234,11 +228,17 @@ export function Payment({ userRole }: PaymentProps) {
                       <input
                         type="text"
                         placeholder="Enter discount codes separated by comma"
+                        value={discountCodes}
+                        onChange={(e) => setDiscountCodes(e.target.value)}
                         className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
                       />
                     </div>
                     <div className="flex justify-end">
-                      <Button className="bg-blue-600 hover:bg-blue-700 text-white">
+                      <Button 
+                        className="bg-blue-600 hover:bg-blue-700 text-white"
+                        onClick={handleCreateInvoice}
+                        disabled={!selectedBooking}
+                      >
                         <Plus className="w-4 h-4 mr-2" />
                         Create Invoice
                       </Button>
@@ -247,192 +247,123 @@ export function Payment({ userRole }: PaymentProps) {
                 </CardContent>
               </Card>
             </section>
-
-            {/* Unpaid Invoices List */}
-            <section>
-              <div className="flex items-center gap-2 mb-4">
-                <Clock className="w-6 h-6 text-yellow-600" />
-                <h2 className="text-gray-700">Unpaid Invoices</h2>
-                <Badge className="bg-yellow-100 text-yellow-800 border-yellow-200">
-                  {invoices.length} pending
-                </Badge>
-              </div>
-              <Card className="shadow-sm">
-                <CardContent className="p-0">
-                  <div className="overflow-x-auto">
-                    <table className="w-full">
-                      <thead className="bg-gray-50 border-b border-gray-200">
-                        <tr>
-                          <th className="px-6 py-3 text-left text-sm text-gray-700">Invoice ID</th>
-                          <th className="px-6 py-3 text-left text-sm text-gray-700">Description</th>
-                          <th className="px-6 py-3 text-left text-sm text-gray-700">Created Date</th>
-                          <th className="px-6 py-3 text-left text-sm text-gray-700">Due Date</th>
-                          <th className="px-6 py-3 text-left text-sm text-gray-700">Amount</th>
-                          <th className="px-6 py-3 text-left text-sm text-gray-700">Status</th>
-                          <th className="px-6 py-3 text-right text-sm text-gray-700">Actions</th>
-                        </tr>
-                      </thead>
-                      <tbody className="bg-white divide-y divide-gray-200">
-                        {invoices.map((invoice) => (
-                          <tr key={invoice.id} className="hover:bg-gray-50">
-                            <td className="px-6 py-4">
-                              <span className="px-3 py-1 bg-blue-100 text-blue-800 rounded text-sm">
-                                {invoice.invoice}
-                              </span>
-                            </td>
-                            <td className="px-6 py-4 text-gray-900">{invoice.description}</td>
-                            <td className="px-6 py-4 text-gray-600">{invoice.date}</td>
-                            <td className="px-6 py-4">
-                              <span className="text-red-600">{invoice.dueDate}</span>
-                            </td>
-                            <td className="px-6 py-4">
-                              <span className="text-lg text-gray-900">${invoice.amount}</span>
-                            </td>
-                            <td className="px-6 py-4">
-                              <Badge className="bg-yellow-100 text-yellow-800 border-yellow-200">
-                                <Clock className="w-3 h-3 mr-1" />
-                                Pending
-                              </Badge>
-                            </td>
-                            <td className="px-6 py-4">
-                              <div className="flex items-center justify-end gap-2">
-                                <Button
-                                  size="sm"
-                                  className="bg-green-600 hover:bg-green-700 text-white"
-                                >
-                                  <CreditCard className="w-4 h-4 mr-1" />
-                                  Pay
-                                </Button>
-                                <Button
-                                  size="sm"
-                                  variant="destructive"
-                                  className="bg-red-600 hover:bg-red-700"
-                                >
-                                  <Trash2 className="w-4 h-4" />
-                                </Button>
-                              </div>
-                            </td>
-                          </tr>
-                        ))}
-                      </tbody>
-                    </table>
-                  </div>
-                </CardContent>
-              </Card>
-
-              {/* Summary */}
-              <Card className="mt-4 shadow-sm bg-yellow-50 border-yellow-200">
-                <CardContent className="pt-6">
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-3">
-                      <Clock className="w-8 h-8 text-yellow-600" />
-                      <div>
-                        <p className="text-gray-600">Total Outstanding</p>
-                        <p className="text-2xl text-gray-900">
-                          ${invoices.reduce((sum, inv) => sum + inv.amount, 0)}
-                        </p>
-                      </div>
-                    </div>
-                    <Button className="bg-green-600 hover:bg-green-700 text-white">
-                      Pay All Invoices
-                    </Button>
-                  </div>
-                </CardContent>
-              </Card>
-            </section>
           </TabsContent>
 
-          {/* Tab Payments */}
-          <TabsContent value="payments" className="space-y-8">
+          {/* Tab Payment History */}
+          <TabsContent value="history" className="space-y-8">
             <section>
               <div className="flex items-center gap-2 mb-4">
                 <CheckCircle className="w-6 h-6 text-green-600" />
                 <h2 className="text-gray-700">Payment History</h2>
                 <Badge className="bg-green-100 text-green-800 border-green-200">
-                  {paidInvoices.length} completed
+                  {paidInvoices.length} paid
                 </Badge>
               </div>
               <Card className="shadow-sm">
                 <CardContent className="p-0">
-                  <div className="overflow-x-auto">
-                    <table className="w-full">
-                      <thead className="bg-gray-50 border-b border-gray-200">
-                        <tr>
-                          <th className="px-6 py-3 text-left text-sm text-gray-700">Invoice ID</th>
-                          <th className="px-6 py-3 text-left text-sm text-gray-700">Description</th>
-                          <th className="px-6 py-3 text-left text-sm text-gray-700">Booking Date</th>
-                          <th className="px-6 py-3 text-left text-sm text-gray-700">Paid Date</th>
-                          <th className="px-6 py-3 text-left text-sm text-gray-700">Amount</th>
-                          <th className="px-6 py-3 text-left text-sm text-gray-700">Method</th>
-                          <th className="px-6 py-3 text-left text-sm text-gray-700">Status</th>
-                        </tr>
-                      </thead>
-                      <tbody className="bg-white divide-y divide-gray-200">
-                        {paidInvoices.map((payment) => (
-                          <tr key={payment.id} className="hover:bg-gray-50">
-                            <td className="px-6 py-4">
-                              <span className="px-3 py-1 bg-green-100 text-green-800 rounded text-sm">
-                                {payment.invoice}
-                              </span>
-                            </td>
-                            <td className="px-6 py-4 text-gray-900">{payment.description}</td>
-                            <td className="px-6 py-4 text-gray-600">{payment.date}</td>
-                            <td className="px-6 py-4 text-gray-600">{payment.paidDate}</td>
-                            <td className="px-6 py-4">
-                              <span className="text-lg text-gray-900">${payment.amount}</span>
-                            </td>
-                            <td className="px-6 py-4">
-                              <div className="flex items-center gap-2 text-gray-600">
-                                <CreditCard className="w-4 h-4" />
-                                {payment.method}
-                              </div>
-                            </td>
-                            <td className="px-6 py-4">
-                              <Badge className="bg-green-100 text-green-800 border-green-200">
-                                <CheckCircle className="w-3 h-3 mr-1" />
-                                Paid
-                              </Badge>
-                            </td>
+                  {isLoadingInvoices ? (
+                    <div className="flex justify-center items-center py-8">
+                      <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+                      <span className="ml-3 text-gray-600">Loading invoices...</span>
+                    </div>
+                  ) : paidInvoices.length === 0 ? (
+                    <div className="text-center py-8 text-gray-500">
+                      No payment history found
+                    </div>
+                  ) : (
+                    <div className="overflow-x-auto">
+                      <table className="w-full">
+                        <thead className="bg-gray-50 border-b border-gray-200">
+                          <tr>
+                            <th className="px-6 py-3 text-left text-sm text-gray-700">Invoice ID</th>
+                            <th className="px-6 py-3 text-left text-sm text-gray-700">Customer</th>
+                            <th className="px-6 py-3 text-left text-sm text-gray-700">Field</th>
+                            <th className="px-6 py-3 text-left text-sm text-gray-700">Booking Date</th>
+                            <th className="px-6 py-3 text-left text-sm text-gray-700">Time</th>
+                            <th className="px-6 py-3 text-left text-sm text-gray-700">Invoice Date</th>
+                            <th className="px-6 py-3 text-left text-sm text-gray-700">Total</th>
+                            <th className="px-6 py-3 text-left text-sm text-gray-700">Status</th>
                           </tr>
-                        ))}
-                      </tbody>
-                    </table>
-                  </div>
+                        </thead>
+                        <tbody className="bg-white divide-y divide-gray-200">
+                          {paidInvoices.map((invoice) => (
+                            <tr key={invoice.maHd} className="hover:bg-gray-50">
+                              <td className="px-6 py-4">
+                                <span className="px-3 py-1 bg-green-100 text-green-800 rounded text-sm font-medium">
+                                  INV-{invoice.maHd}
+                                </span>
+                              </td>
+                              <td className="px-6 py-4 text-gray-900">
+                                {invoice.tenKhachHang || 'N/A'}
+                              </td>
+                              <td className="px-6 py-4 text-gray-900">
+                                {invoice.tenSan || 'N/A'}
+                              </td>
+                              <td className="px-6 py-4 text-gray-600">
+                                {invoice.ngayDat || 'N/A'}
+                              </td>
+                              <td className="px-6 py-4 text-gray-600">
+                                {invoice.gioBatDau && invoice.gioKetThuc 
+                                  ? `${invoice.gioBatDau} - ${invoice.gioKetThuc}`
+                                  : 'N/A'}
+                              </td>
+                              <td className="px-6 py-4 text-gray-600">
+                                {new Date(invoice.ngayLap).toLocaleDateString('vi-VN')}
+                              </td>
+                              <td className="px-6 py-4">
+                                <span className="text-lg font-semibold text-gray-900">
+                                  ${invoice.tongCuoi.toLocaleString()}
+                                </span>
+                              </td>
+                              <td className="px-6 py-4">
+                                <Badge className="bg-green-100 text-green-800 border-green-200">
+                                  <CheckCircle className="w-3 h-3 mr-1" />
+                                  Paid
+                                </Badge>
+                              </td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
+                  )}
                 </CardContent>
               </Card>
 
               {/* Summary */}
-              <Card className="mt-4 shadow-sm bg-green-50 border-green-200">
-                <CardContent className="pt-6">
-                  <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                    <div className="flex items-center gap-3">
-                      <CheckCircle className="w-8 h-8 text-green-600" />
-                      <div>
-                        <p className="text-gray-600">Total Paid</p>
-                        <p className="text-2xl text-gray-900">
-                          ${paidInvoices.reduce((sum, p) => sum + p.amount, 0)}
-                        </p>
+              {paidInvoices.length > 0 && (
+                <Card className="mt-4 shadow-sm bg-green-50 border-green-200">
+                  <CardContent className="pt-6">
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                      <div className="flex items-center gap-3">
+                        <CheckCircle className="w-8 h-8 text-green-600" />
+                        <div>
+                          <p className="text-gray-600">Total Paid</p>
+                          <p className="text-2xl text-gray-900">
+                            ${paidInvoices.reduce((sum, p) => sum + p.tongCuoi, 0).toLocaleString()}
+                          </p>
+                        </div>
+                      </div>
+                      <div className="flex items-center gap-3">
+                        <FileText className="w-8 h-8 text-blue-600" />
+                        <div>
+                          <p className="text-gray-600">Total Transactions</p>
+                          <p className="text-2xl text-gray-900">{paidInvoices.length}</p>
+                        </div>
+                      </div>
+                      <div className="flex items-center gap-3">
+                        <TrendingUp className="w-8 h-8 text-purple-600" />
+                        <div>
+                          <p className="text-gray-600">Average Payment</p>
+                          <p className="text-2xl text-gray-900">
+                            ${Math.round(paidInvoices.reduce((sum, p) => sum + p.tongCuoi, 0) / paidInvoices.length).toLocaleString()}
+                          </p>
+                        </div>
                       </div>
                     </div>
-                    <div className="flex items-center gap-3">
-                      <FileText className="w-8 h-8 text-blue-600" />
-                      <div>
-                        <p className="text-gray-600">Total Transactions</p>
-                        <p className="text-2xl text-gray-900">{paidInvoices.length}</p>
-                      </div>
-                    </div>
-                    <div className="flex items-center gap-3">
-                      <TrendingUp className="w-8 h-8 text-purple-600" />
-                      <div>
-                        <p className="text-gray-600">Average Payment</p>
-                        <p className="text-2xl text-gray-900">
-                          ${Math.round(paidInvoices.reduce((sum, p) => sum + p.amount, 0) / paidInvoices.length)}
-                        </p>
-                      </div>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
+                  </CardContent>
+                </Card>
+              )}
             </section>
           </TabsContent>
         </Tabs>
@@ -441,6 +372,12 @@ export function Payment({ userRole }: PaymentProps) {
   }
 
   // Manager View - Payment Management
+  const transactions = [
+    { id: 'TXN-001', user: 'John Doe', service: 'Football Field A', amount: 120, method: 'Credit Card', status: 'Completed', date: '2024-01-15' },
+    { id: 'TXN-002', user: 'Jane Smith', service: 'Basketball Court', amount: 80, method: 'PayPal', status: 'Pending', date: '2024-01-14' },
+    { id: 'TXN-003', user: 'Bob Johnson', service: 'Tennis Court', amount: 150, method: 'Debit Card', status: 'Completed', date: '2024-01-13' },
+  ];
+
   return (
     <div className="p-8">
       <div className="mb-8">
