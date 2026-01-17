@@ -235,4 +235,78 @@ public class InvoicesController : ControllerBase
             });
         }
     }
+
+    [HttpPut("{maHd}")]
+    [ProducesResponseType(StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    public async Task<ActionResult<object>> UpdateInvoice(int maHd, [FromBody] UpdateInvoiceRequest request)
+    {
+        try
+        {
+            var invoice = await _invoiceService.UpdateInvoiceAsync(maHd, request.MaGiamGia, request.TestRollback);
+
+            _logger.LogInformation("Cập nhật hóa đơn thành công. Mã hóa đơn: {MaHd}", maHd);
+
+            return Ok(new
+            {
+                success = true,
+                message = "Cập nhật hóa đơn thành công",
+                data = invoice
+            });
+        }
+        catch (InvalidOperationException ex)
+        {
+            _logger.LogWarning("Lỗi cập nhật hóa đơn: {Message}", ex.Message);
+            return BadRequest(new
+            {
+                success = false,
+                message = ex.Message
+            });
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Lỗi không xác định khi cập nhật hóa đơn {MaHd}", maHd);
+            return StatusCode(500, new
+            {
+                success = false,
+                message = "Đã xảy ra lỗi khi cập nhật hóa đơn"
+            });
+        }
+    }
+
+    [HttpGet("{maHd}/detail")]
+    [ProducesResponseType(typeof(InvoiceResponse), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    public async Task<ActionResult<InvoiceResponse>> GetInvoiceDetailWithRepeatableRead(int maHd)
+    {
+        try
+        {
+            var invoice = await _invoiceService.GetInvoiceDetailWithRepeatableReadAsync(maHd);
+
+            if (invoice == null)
+            {
+                return NotFound(new
+                {
+                    success = false,
+                    message = $"Không tìm thấy hóa đơn với mã {maHd}"
+                });
+            }
+
+            return Ok(new
+            {
+                success = true,
+                data = invoice
+            });
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Lỗi khi xem chi tiết hóa đơn {MaHd}", maHd);
+            return StatusCode(500, new
+            {
+                success = false,
+                message = "Đã xảy ra lỗi khi xem chi tiết hóa đơn"
+            });
+        }
+    }
 }
