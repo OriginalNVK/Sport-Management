@@ -1,8 +1,27 @@
 prompt.md
-<<<<<<< HEAD
-=======
+
 # Visual Studio / .NET
->>>>>>> main
 .vs/
 **/bin/
 **/obj/
+**/Debug/
+**/Release/
+
+# .NET Build artifacts
+*.dll
+*.exe
+*.pdb
+*.cache
+*.AssemblyInfo.cs
+*.AssemblyInfoInputs.cache
+*.GeneratedMSBuildEditorConfig.editorconfig
+*.GlobalUsings.g.cs
+*.assets.cache
+*.csproj.AssemblyReference.cache
+*.csproj.CoreCompileInputs.cache
+*.genruntimeconfig.cache
+project.assets.json
+project.nuget.cache
+*.csproj.nuget.dgspec.json
+*.csproj.nuget.g.props
+*.csproj.nuget.g.targets
