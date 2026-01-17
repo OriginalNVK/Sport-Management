@@ -48,8 +48,22 @@ export function Sidebar({ currentPage, onPageChange, userRole, userEmail, onLogo
     { id: 'profile' as PageType, label: 'Profile', icon: UserCircle },
   ];
 
+  // Menu items for staff and receptionist roles
+  const staffMenuItems = [
+    { id: 'dashboard' as PageType, label: 'Dashboard', icon: LayoutDashboard },
+    { id: 'my-shifts' as PageType, label: 'My Shifts', icon: Clock },
+    { id: 'my-leave-requests' as PageType, label: 'My Leave Requests', icon: FileText },
+    { id: 'booking' as PageType, label: 'Booking', icon: Calendar },
+    { id: 'field-status' as PageType, label: 'Field Status', icon: Building2 },
+    { id: 'profile' as PageType, label: 'Profile', icon: UserCircle },
+  ];
+
   // Select menu items based on user role
-  const menuItems = userRole === 'manager' ? managerMenuItems : customerMenuItems;
+  const menuItems = userRole === 'manager' 
+    ? managerMenuItems 
+    : (userRole === 'staff' || userRole === 'receptionist') 
+      ? staffMenuItems 
+      : customerMenuItems;
 
   return (
     <aside className="w-80 bg-black border-r border-gray-200 flex flex-col">

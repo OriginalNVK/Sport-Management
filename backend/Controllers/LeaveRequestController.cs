@@ -208,4 +208,116 @@ public class LeaveRequestController : ControllerBase
             return StatusCode(500, new { message = "Đã xảy ra lỗi khi xóa đơn nghỉ phép" });
         }
     }
+
+    // =============================================
+    // PHANTOM READ DEMO ENDPOINTS
+    // =============================================
+
+    /// <summary>
+    /// [DEMO PHANTOM READ] Đọc danh sách đơn nghỉ phép 2 lần (CÓ LỖI)
+    /// Quản lý gọi API này để demo phantom read
+    /// </summary>
+    [HttpGet("phantom-demo")]
+    [ProducesResponseType(typeof(PhantomReadDemoResult), StatusCodes.Status200OK)]
+    public async Task<IActionResult> PhantomReadDemo()
+    {
+        try
+        {
+            _logger.LogInformation("Starting Phantom Read Demo (WITH BUG)...");
+            var result = await _leaveService.GetLeaveRequestsWithPhantomReadAsync();
+            _logger.LogInformation($"Phantom Read Demo completed. HasPhantomRead: {result.HasPhantomRead}");
+            return Ok(result);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError($"Error in phantom read demo: {ex.Message}");
+            return StatusCode(500, new { message = "Đã xảy ra lỗi khi demo phantom read" });
+        }
+    }
+
+    /// <summary>
+    /// [DEMO ĐÃ FIX] Đọc danh sách đơn nghỉ phép 2 lần (ĐÃ FIX PHANTOM READ)
+    /// Quản lý gọi API này để demo đã fix phantom read
+    /// </summary>
+    [HttpGet("fixed-phantom-demo")]
+    [ProducesResponseType(typeof(PhantomReadDemoResult), StatusCodes.Status200OK)]
+    public async Task<IActionResult> FixedPhantomReadDemo()
+    {
+        try
+        {
+            _logger.LogInformation("Starting Fixed Phantom Read Demo (NO BUG)...");
+            var result = await _leaveService.GetLeaveRequestsFixedPhantomReadAsync();
+            _logger.LogInformation($"Fixed Phantom Read Demo completed. HasPhantomRead: {result.HasPhantomRead}");
+            return Ok(result);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError($"Error in fixed phantom read demo: {ex.Message}");
+            return StatusCode(500, new { message = "Đã xảy ra lỗi khi demo fixed phantom read" });
+        }
+    }
+
+    /// <summary>
+    /// [DEMO] Tạo đơn nghỉ phép (không bị block) - Dùng cho demo phantom read
+    /// Nhân viên gọi API này trong khi quản lý đang đọc danh sách
+    /// </summary>
+    [HttpPost("normal")]
+    [ProducesResponseType(typeof(object), StatusCodes.Status201Created)]
+    public async Task<IActionResult> CreateLeaveRequestNormal([FromBody] CreateLeaveRequest request)
+    {
+        try
+        {
+            if (!ModelState.IsValid)
+                return BadRequest(ModelState);
+
+            _logger.LogInformation($"Creating leave request (NORMAL) for employee {request.MaNv}...");
+            var maDon = await _leaveService.CreateLeaveRequestNormalAsync(request);
+            _logger.LogInformation($"Leave request created successfully with ID: {maDon}");
+            
+            return CreatedAtAction(nameof(GetLeaveRequestById), new { maDon }, 
+                new { message = "Tạo đơn nghỉ phép thành công (NORMAL - không bị block)", maDon });
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError($"Error creating leave request (normal): {ex.Message}");
+            return StatusCode(500, new { message = ex.Message });
+        }
+    }
+
+    /// <summary>
+    /// [DEMO] Tạo đơn nghỉ phép (sẽ bị block) - Dùng cho demo fixed phantom read
+    /// Nhân viên gọi API này sẽ bị chờ nếu quản lý đang đọc danh sách với SERIALIZABLE lock
+    /// </summary>
+    [HttpPost("will-block")]
+    [ProducesResponseType(typeof(object), StatusCodes.Status201Created)]
+    public async Task<IActionResult> CreateLeaveRequestWillBlock([FromBody] CreateLeaveRequest request)
+    {
+        try
+        {
+            if (!ModelState.IsValid)
+                return BadRequest(ModelState);
+
+            _logger.LogInformation($"Creating leave request (WILL BE BLOCKED) for employee {request.MaNv}...");
+            var startTime = DateTime.Now;
+            
+            var maDon = await _leaveService.CreateLeaveRequestWillBeBlockedAsync(request);
+            
+            var endTime = DateTime.Now;
+            var waitTime = (endTime - startTime).TotalSeconds;
+            
+            _logger.LogInformation($"Leave request created successfully with ID: {maDon} (waited {waitTime:F2} seconds)");
+            
+            return CreatedAtAction(nameof(GetLeaveRequestById), new { maDon }, 
+                new { 
+                    message = $"Tạo đơn nghỉ phép thành công (đã chờ {waitTime:F2} giây do transaction khác đang lock)", 
+                    maDon,
+                    waitedSeconds = waitTime
+                });
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError($"Error creating leave request (will block): {ex.Message}");
+            return StatusCode(500, new { message = ex.Message });
+        }
+    }
 }

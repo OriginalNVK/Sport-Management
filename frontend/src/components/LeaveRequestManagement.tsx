@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { FileText, Search, CheckCircle, XCircle, Clock, Loader2, User } from 'lucide-react';
+import { FileText, Search, CheckCircle, XCircle, Clock, Loader2, User, RefreshCw } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from './ui/card';
 import { Input } from './ui/input';
 import { Button } from './ui/button';
@@ -22,9 +22,10 @@ export function LeaveRequestManagement() {
       setLoading(true);
       setError('');
       const data = await LeaveService.getAllLeaveRequests();
-      setLeaveRequests(data);
+      setLeaveRequests(data || []);
     } catch (err: any) {
       setError(err.message || 'Không thể tải danh sách đơn nghỉ phép');
+      setLeaveRequests([]);
       console.error('Error loading leave requests:', err);
     } finally {
       setLoading(false);
@@ -74,16 +75,16 @@ export function LeaveRequestManagement() {
     return { label: status.label, className: status.class };
   };
 
-  const filteredRequests = leaveRequests.filter(req => {
+  const filteredRequests = (leaveRequests || []).filter(req => {
     const matchesSearch = req.tenNhanVien?.toLowerCase().includes(searchTerm.toLowerCase()) ||
                          req.lyDo?.toLowerCase().includes(searchTerm.toLowerCase());
     const matchesStatus = filterStatus === 'all' || req.trangThai === filterStatus;
     return matchesSearch && matchesStatus;
   });
 
-  const pendingCount = leaveRequests.filter(r => r.trangThai === 'cho_duyet').length;
-  const approvedCount = leaveRequests.filter(r => r.trangThai === 'da_duyet').length;
-  const rejectedCount = leaveRequests.filter(r => r.trangThai === 'tu_choi').length;
+  const pendingCount = (leaveRequests || []).filter(r => r.trangThai === 'cho_duyet').length;
+  const approvedCount = (leaveRequests || []).filter(r => r.trangThai === 'da_duyet').length;
+  const rejectedCount = (leaveRequests || []).filter(r => r.trangThai === 'tu_choi').length;
 
   if (loading) {
     return (
@@ -113,7 +114,7 @@ export function LeaveRequestManagement() {
   return (
     <div className="p-8">
       <div className="mb-8">
-        <h1 className="text-gray-800">Quản lý Đơn nghỉ phép</h1>
+        <h1 className="text-3xl font-bold text-gray-800">Quản lý Đơn nghỉ phép</h1>
         <p className="text-gray-600 mt-2">Duyệt và quản lý các đơn nghỉ phép của nhân viên</p>
       </div>
 
@@ -124,7 +125,7 @@ export function LeaveRequestManagement() {
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-gray-600 text-sm">Tổng đơn</p>
-                <p className="text-gray-900 mt-1">{leaveRequests.length}</p>
+                <p className="text-3xl font-bold text-gray-900 mt-1">{leaveRequests.length}</p>
               </div>
               <div className="w-12 h-12 bg-blue-50 rounded-full flex items-center justify-center">
                 <FileText className="w-6 h-6 text-blue-600" />
@@ -138,7 +139,7 @@ export function LeaveRequestManagement() {
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-gray-600 text-sm">Chờ duyệt</p>
-                <p className="text-gray-900 mt-1">{pendingCount}</p>
+                <p className="text-3xl font-bold text-gray-900 mt-1">{pendingCount}</p>
               </div>
               <div className="w-12 h-12 bg-yellow-50 rounded-full flex items-center justify-center">
                 <Clock className="w-6 h-6 text-yellow-600" />
@@ -152,7 +153,7 @@ export function LeaveRequestManagement() {
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-gray-600 text-sm">Đã duyệt</p>
-                <p className="text-gray-900 mt-1">{approvedCount}</p>
+                <p className="text-3xl font-bold text-gray-900 mt-1">{approvedCount}</p>
               </div>
               <div className="w-12 h-12 bg-green-50 rounded-full flex items-center justify-center">
                 <CheckCircle className="w-6 h-6 text-green-600" />
@@ -166,7 +167,7 @@ export function LeaveRequestManagement() {
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-gray-600 text-sm">Từ chối</p>
-                <p className="text-gray-900 mt-1">{rejectedCount}</p>
+                <p className="text-3xl font-bold text-gray-900 mt-1">{rejectedCount}</p>
               </div>
               <div className="w-12 h-12 bg-red-50 rounded-full flex items-center justify-center">
                 <XCircle className="w-6 h-6 text-red-600" />
@@ -219,89 +220,124 @@ export function LeaveRequestManagement() {
         </CardContent>
       </Card>
 
-      {/* Leave Requests List */}
-      <div className="space-y-4">
-        {filteredRequests.length === 0 ? (
-          <Card className="shadow-sm">
-            <CardContent className="pt-6">
-              <div className="text-center py-8 text-gray-500">
-                {searchTerm || filterStatus !== 'all' 
-                  ? 'Không tìm thấy đơn nghỉ phép phù hợp' 
-                  : 'Chưa có đơn nghỉ phép nào'}
-              </div>
-            </CardContent>
-          </Card>
-        ) : (
-          filteredRequests.map((request) => {
-            const statusBadge = getStatusBadge(request.trangThai);
-            return (
-              <Card key={request.maDon} className="shadow-sm hover:shadow-md transition-shadow">
-                <CardContent className="pt-6">
-                  <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-                    <div className="flex items-start gap-4 flex-1">
-                      <div className="w-12 h-12 bg-blue-100 rounded-full flex items-center justify-center flex-shrink-0">
-                        <User className="w-6 h-6 text-blue-600" />
-                      </div>
-                      <div className="flex-1 min-w-0">
-                        <div className="flex items-center gap-2 mb-2">
-                          <h3 className="font-medium text-gray-900">
-                            {request.tenNhanVien}
-                          </h3>
-                          <Badge className={statusBadge.className}>
-                            {statusBadge.label}
+      {/* Leave Requests Table */}
+      <Card className="shadow-sm">
+        <CardHeader className="border-b bg-gray-50">
+          <div className="flex items-center justify-between">
+            <CardTitle>Danh sách đơn nghỉ phép</CardTitle>
+            <Button onClick={loadLeaveRequests} variant="outline" size="sm">
+              <RefreshCw className="w-4 h-4 mr-2" />
+              Làm mới
+            </Button>
+          </div>
+        </CardHeader>
+        <CardContent className="p-0">
+          {filteredRequests.length === 0 ? (
+            <div className="text-center py-12 text-gray-500">
+              <FileText className="w-12 h-12 mx-auto mb-3 text-gray-400" />
+              <p>Không có đơn nghỉ phép nào</p>
+            </div>
+          ) : (
+            <div className="overflow-x-auto">
+              <table className="w-full">
+                <thead className="bg-gray-50 border-b">
+                  <tr>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      Mã đơn
+                    </th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      Nhân viên
+                    </th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      Chức vụ
+                    </th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      Ngày nghỉ
+                    </th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      Lý do
+                    </th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      Trạng thái
+                    </th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      Thao tác
+                    </th>
+                  </tr>
+                </thead>
+                <tbody className="bg-white divide-y divide-gray-200">
+                  {filteredRequests.map((request) => {
+                    const status = getStatusBadge(request.trangThai);
+                    return (
+                      <tr key={request.maDon} className="hover:bg-gray-50">
+                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                          #{request.maDon}
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap">
+                          <div className="flex items-center">
+                            <div className="w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center mr-3">
+                              <User className="w-4 h-4 text-blue-600" />
+                            </div>
+                            <span className="text-sm font-medium text-gray-900">
+                              {request.tenNhanVien || 'N/A'}
+                            </span>
+                          </div>
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600">
+                          {request.chucVu || 'N/A'}
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                          {new Date(request.ngayNghi).toLocaleDateString('vi-VN')}
+                        </td>
+                        <td className="px-6 py-4 text-sm text-gray-600 max-w-xs truncate">
+                          {request.lyDo || 'N/A'}
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap">
+                          <Badge variant="outline" className={status.className}>
+                            {status.label}
                           </Badge>
-                        </div>
-                        <p className="text-sm text-gray-600 mb-1">
-                          <span className="font-medium">Chức vụ:</span> {request.chucVu || '-'}
-                        </p>
-                        <p className="text-sm text-gray-600 mb-1">
-                          <span className="font-medium">Ngày nghỉ:</span> {request.ngayNghi}
-                        </p>
-                        {request.lyDo && (
-                          <p className="text-sm text-gray-600">
-                            <span className="font-medium">Lý do:</span> {request.lyDo}
-                          </p>
-                        )}
-                      </div>
-                    </div>
-                    <div className="flex gap-2 flex-shrink-0">
-                      {request.trangThai === 'cho_duyet' && (
-                        <>
-                          <Button
-                            size="sm"
-                            className="bg-green-600 hover:bg-green-700"
-                            onClick={() => handleApprove(request.maDon)}
-                          >
-                            <CheckCircle className="w-4 h-4 mr-1" />
-                            Duyệt
-                          </Button>
-                          <Button
-                            size="sm"
-                            variant="outline"
-                            className="text-red-600 hover:text-red-700 hover:bg-red-50 border-red-200"
-                            onClick={() => handleReject(request.maDon)}
-                          >
-                            <XCircle className="w-4 h-4 mr-1" />
-                            Từ chối
-                          </Button>
-                        </>
-                      )}
-                      <Button
-                        size="sm"
-                        variant="outline"
-                        className="text-red-600 hover:text-red-700 hover:bg-red-50"
-                        onClick={() => handleDelete(request.maDon)}
-                      >
-                        Xóa
-                      </Button>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-            );
-          })
-        )}
-      </div>
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm">
+                          {request.trangThai === 'cho_duyet' ? (
+                            <div className="flex gap-2">
+                              <Button
+                                size="sm"
+                                onClick={() => handleApprove(request.maDon)}
+                                className="bg-green-600 hover:bg-green-700"
+                              >
+                                <CheckCircle className="w-4 h-4 mr-1" />
+                                Duyệt
+                              </Button>
+                              <Button
+                                size="sm"
+                                variant="outline"
+                                onClick={() => handleReject(request.maDon)}
+                                className="border-red-300 text-red-600 hover:bg-red-50"
+                              >
+                                <XCircle className="w-4 h-4 mr-1" />
+                                Từ chối
+                              </Button>
+                            </div>
+                          ) : (
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              onClick={() => handleDelete(request.maDon)}
+                              className="border-gray-300 text-gray-600 hover:bg-gray-50"
+                            >
+                              Xóa
+                            </Button>
+                          )}
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
+          )}
+        </CardContent>
+      </Card>
     </div>
   );
 }
