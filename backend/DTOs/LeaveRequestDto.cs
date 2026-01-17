@@ -41,3 +41,17 @@ public class ApproveLeaveRequest
     [RegularExpression("^(da_duyet|tu_choi)$", ErrorMessage = "Trạng thái chỉ có thể là 'da_duyet' hoặc 'tu_choi'")]
     public string TrangThai { get; set; } = string.Empty; // da_duyet hoặc tu_choi
 }
+
+/// <summary>
+/// DTO cho kết quả demo Phantom Read
+/// </summary>
+public class PhantomReadDemoResult
+{
+    public List<LeaveRequestDto> LanDoc1 { get; set; } = new();
+    public List<LeaveRequestDto> LanDoc2 { get; set; } = new();
+    public string Message { get; set; } = string.Empty;
+    public DateTime StartTime { get; set; }
+    public DateTime EndTime { get; set; }
+    public bool HasPhantomRead { get; set; }
+}
+

@@ -1,6 +1,7 @@
 using backend.Data;
 using backend.DTOs;
 using Microsoft.EntityFrameworkCore;
+using System.Data;
 
 namespace backend.Services;
 
@@ -231,6 +232,250 @@ public class LeaveService : ILeaveService
         catch (Exception ex)
         {
             _logger.LogError($"Error deleting leave request {maDon}: {ex.Message}");
+            throw;
+        }
+    }
+
+    // =============================================
+    // PHANTOM READ DEMO METHODS
+    // =============================================
+
+    public async Task<PhantomReadDemoResult> GetLeaveRequestsWithPhantomReadAsync()
+    {
+        var result = new PhantomReadDemoResult
+        {
+            StartTime = DateTime.Now,
+            Message = "Demo Phantom Read (CÓ LỖI) - Đọc 2 lần với delay 5 giây"
+        };
+
+        try
+        {
+            using (var connection = _context.Database.GetDbConnection())
+            {
+                await connection.OpenAsync();
+                using (var command = connection.CreateCommand())
+                {
+                    command.CommandText = "sp_GetLeaveRequests_WithPhantomRead";
+                    command.CommandType = System.Data.CommandType.StoredProcedure;
+                    command.CommandTimeout = 30;
+
+                    using (var reader = await command.ExecuteReaderAsync())
+                    {
+                        // Đọc kết quả lần 1
+                        while (await reader.ReadAsync())
+                        {
+                            result.LanDoc1.Add(new LeaveRequestDto
+                            {
+                                MaDon = reader.GetInt32(0),
+                                MaNv = reader.GetInt32(1),
+                                TenNhanVien = reader.IsDBNull(2) ? null : reader.GetString(2),
+                                ChucVu = reader.IsDBNull(3) ? null : reader.GetString(3),
+                                NgayNghi = reader.GetDateTime(4),
+                                LyDo = reader.IsDBNull(5) ? null : reader.GetString(5),
+                                TrangThai = reader.IsDBNull(6) ? null : reader.GetString(6)
+                            });
+                        }
+
+                        // Chuyển sang result set tiếp theo (lần đọc 2)
+                        await reader.NextResultAsync();
+                        while (await reader.ReadAsync())
+                        {
+                            result.LanDoc2.Add(new LeaveRequestDto
+                            {
+                                MaDon = reader.GetInt32(0),
+                                MaNv = reader.GetInt32(1),
+                                TenNhanVien = reader.IsDBNull(2) ? null : reader.GetString(2),
+                                ChucVu = reader.IsDBNull(3) ? null : reader.GetString(3),
+                                NgayNghi = reader.GetDateTime(4),
+                                LyDo = reader.IsDBNull(5) ? null : reader.GetString(5),
+                                TrangThai = reader.IsDBNull(6) ? null : reader.GetString(6)
+                            });
+                        }
+                    }
+                }
+            }
+
+            result.EndTime = DateTime.Now;
+            result.HasPhantomRead = result.LanDoc2.Count > result.LanDoc1.Count;
+            
+            if (result.HasPhantomRead)
+            {
+                result.Message += $" | ⚠️ PHANTOM READ DETECTED: Lần 1 có {result.LanDoc1.Count} đơn, lần 2 có {result.LanDoc2.Count} đơn";
+            }
+            else
+            {
+                result.Message += $" | ✓ Không phát hiện phantom read (cả 2 lần đều có {result.LanDoc1.Count} đơn)";
+            }
+
+            return result;
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError($"Error in GetLeaveRequestsWithPhantomReadAsync: {ex.Message}");
+            throw;
+        }
+    }
+
+    public async Task<PhantomReadDemoResult> GetLeaveRequestsFixedPhantomReadAsync()
+    {
+        var result = new PhantomReadDemoResult
+        {
+            StartTime = DateTime.Now,
+            Message = "Demo ĐÃ FIX Phantom Read - Sử dụng SERIALIZABLE isolation level"
+        };
+
+        try
+        {
+            using (var connection = _context.Database.GetDbConnection())
+            {
+                await connection.OpenAsync();
+                using (var command = connection.CreateCommand())
+                {
+                    command.CommandText = "sp_GetLeaveRequests_FixedPhantomRead";
+                    command.CommandType = System.Data.CommandType.StoredProcedure;
+                    command.CommandTimeout = 30;
+
+                    using (var reader = await command.ExecuteReaderAsync())
+                    {
+                        // Đọc kết quả lần 1
+                        while (await reader.ReadAsync())
+                        {
+                            result.LanDoc1.Add(new LeaveRequestDto
+                            {
+                                MaDon = reader.GetInt32(0),
+                                MaNv = reader.GetInt32(1),
+                                TenNhanVien = reader.IsDBNull(2) ? null : reader.GetString(2),
+                                ChucVu = reader.IsDBNull(3) ? null : reader.GetString(3),
+                                NgayNghi = reader.GetDateTime(4),
+                                LyDo = reader.IsDBNull(5) ? null : reader.GetString(5),
+                                TrangThai = reader.IsDBNull(6) ? null : reader.GetString(6)
+                            });
+                        }
+
+                        // Chuyển sang result set tiếp theo (lần đọc 2)
+                        await reader.NextResultAsync();
+                        while (await reader.ReadAsync())
+                        {
+                            result.LanDoc2.Add(new LeaveRequestDto
+                            {
+                                MaDon = reader.GetInt32(0),
+                                MaNv = reader.GetInt32(1),
+                                TenNhanVien = reader.IsDBNull(2) ? null : reader.GetString(2),
+                                ChucVu = reader.IsDBNull(3) ? null : reader.GetString(3),
+                                NgayNghi = reader.GetDateTime(4),
+                                LyDo = reader.IsDBNull(5) ? null : reader.GetString(5),
+                                TrangThai = reader.IsDBNull(6) ? null : reader.GetString(6)
+                            });
+                        }
+                    }
+                }
+            }
+
+            result.EndTime = DateTime.Now;
+            result.HasPhantomRead = result.LanDoc2.Count > result.LanDoc1.Count;
+            
+            result.Message += $" | ✓ ĐÃ FIX: Lần 1 có {result.LanDoc1.Count} đơn, lần 2 có {result.LanDoc2.Count} đơn (không thay đổi)";
+
+            return result;
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError($"Error in GetLeaveRequestsFixedPhantomReadAsync: {ex.Message}");
+            throw;
+        }
+    }
+
+    public async Task<int> CreateLeaveRequestNormalAsync(CreateLeaveRequest request)
+    {
+        try
+        {
+            using (var connection = _context.Database.GetDbConnection())
+            {
+                await connection.OpenAsync();
+                using (var command = connection.CreateCommand())
+                {
+                    command.CommandText = "sp_CreateLeaveRequest_Normal";
+                    command.CommandType = System.Data.CommandType.StoredProcedure;
+
+                    // Add parameters
+                    var paramMaNv = command.CreateParameter();
+                    paramMaNv.ParameterName = "@MaNv";
+                    paramMaNv.Value = request.MaNv;
+                    command.Parameters.Add(paramMaNv);
+
+                    var paramNgayNghi = command.CreateParameter();
+                    paramNgayNghi.ParameterName = "@NgayNghi";
+                    paramNgayNghi.Value = request.NgayNghi.Date;
+                    command.Parameters.Add(paramNgayNghi);
+
+                    var paramLyDo = command.CreateParameter();
+                    paramLyDo.ParameterName = "@LyDo";
+                    paramLyDo.Value = request.LyDo;
+                    command.Parameters.Add(paramLyDo);
+
+                    var paramOutput = command.CreateParameter();
+                    paramOutput.ParameterName = "@MaDonOutput";
+                    paramOutput.Direction = System.Data.ParameterDirection.Output;
+                    paramOutput.DbType = System.Data.DbType.Int32;
+                    command.Parameters.Add(paramOutput);
+
+                    await command.ExecuteNonQueryAsync();
+
+                    return (int)paramOutput.Value;
+                }
+            }
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError($"Error in CreateLeaveRequestNormalAsync: {ex.Message}");
+            throw;
+        }
+    }
+
+    public async Task<int> CreateLeaveRequestWillBeBlockedAsync(CreateLeaveRequest request)
+    {
+        try
+        {
+            using (var connection = _context.Database.GetDbConnection())
+            {
+                await connection.OpenAsync();
+                using (var command = connection.CreateCommand())
+                {
+                    command.CommandText = "sp_CreateLeaveRequest_WillBeBlocked";
+                    command.CommandType = System.Data.CommandType.StoredProcedure;
+                    command.CommandTimeout = 30; // Timeout 30 giây để chờ lock
+
+                    // Add parameters
+                    var paramMaNv = command.CreateParameter();
+                    paramMaNv.ParameterName = "@MaNv";
+                    paramMaNv.Value = request.MaNv;
+                    command.Parameters.Add(paramMaNv);
+
+                    var paramNgayNghi = command.CreateParameter();
+                    paramNgayNghi.ParameterName = "@NgayNghi";
+                    paramNgayNghi.Value = request.NgayNghi.Date;
+                    command.Parameters.Add(paramNgayNghi);
+
+                    var paramLyDo = command.CreateParameter();
+                    paramLyDo.ParameterName = "@LyDo";
+                    paramLyDo.Value = request.LyDo;
+                    command.Parameters.Add(paramLyDo);
+
+                    var paramOutput = command.CreateParameter();
+                    paramOutput.ParameterName = "@MaDonOutput";
+                    paramOutput.Direction = System.Data.ParameterDirection.Output;
+                    paramOutput.DbType = System.Data.DbType.Int32;
+                    command.Parameters.Add(paramOutput);
+
+                    await command.ExecuteNonQueryAsync();
+
+                    return (int)paramOutput.Value;
+                }
+            }
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError($"Error in CreateLeaveRequestWillBeBlockedAsync: {ex.Message}");
             throw;
         }
     }
