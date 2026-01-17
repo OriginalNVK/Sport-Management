@@ -29,6 +29,9 @@ public class DashboardController : ControllerBase
     {
         try
         {
+            _logger.LogInformation("Dashboard summary request: FromDate={FromDate}, ToDate={ToDate}, MaCoSo={MaCoSo}, MaLoaiSan={MaLoaiSan}, OperatingStart={OperatingStart}, OperatingEnd={OperatingEnd}", 
+                filter.FromDate, filter.ToDate, filter.MaCoSo, filter.MaLoaiSan, filter.OperatingStart, filter.OperatingEnd);
+            
             var data = await _dashboardService.GetSummaryAsync(filter);
             return Ok(new { success = true, data });
         }
@@ -39,8 +42,8 @@ public class DashboardController : ControllerBase
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Dashboard summary error");
-            return StatusCode(500, new { success = false, message = "Đã xảy ra lỗi khi lấy dữ liệu dashboard" });
+            _logger.LogError(ex, "Dashboard summary error: {Message}", ex.Message);
+            return StatusCode(500, new { success = false, message = $"Đã xảy ra lỗi khi lấy dữ liệu dashboard: {ex.Message}" });
         }
     }
 

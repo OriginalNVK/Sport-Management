@@ -1,6 +1,6 @@
 using backend.DTOs;
 using backend.Services;
-using backend.Data; 
+using backend.Data;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -10,9 +10,10 @@ namespace backend.Controllers;
 [ApiController]
 [Route("api/v1/[controller]")]
 [Produces("application/json")]
+[Authorize]
 public class BookingsController : ControllerBase
 {
-	  private readonly SportContext _context;
+    private readonly SportContext _context;
 
     private readonly IBookingService _bookingService;
     private readonly ILogger<BookingsController> _logger;
@@ -21,11 +22,11 @@ public class BookingsController : ControllerBase
     IBookingService bookingService,
     ILogger<BookingsController> logger,
     SportContext context)
-{
-    _bookingService = bookingService;
-    _logger = logger;
-    _context = context ?? throw new ArgumentNullException(nameof(context));
-}
+    {
+        _bookingService = bookingService;
+        _logger = logger;
+        _context = context ?? throw new ArgumentNullException(nameof(context));
+    }
 
 
     // 1) Check sân trống theo ngày/giờ
@@ -56,35 +57,64 @@ public class BookingsController : ControllerBase
             return StatusCode(500, new { success = false, message = "Đã xảy ra lỗi khi kiểm tra sân trống" });
         }
     }
-		[HttpGet("price")]
-		public async Task<IActionResult> GetPrice([FromQuery] int maLoai, [FromQuery] string loaiNgay, [FromQuery] string khungGio)
+    [HttpGet("price")]
+    public async Task<IActionResult> GetPrice([FromQuery] int maLoai, [FromQuery] string loaiNgay, [FromQuery] string khungGio)
+    {
+        loaiNgay = (loaiNgay ?? "").Trim().ToLower();
+        khungGio = (khungGio ?? "").Trim().ToLower();
+
+        if (maLoai <= 0)
+            return BadRequest(new { success = false, message = "maLoai không hợp lệ" });
+
+        if (loaiNgay is not ("thuong" or "cuoi_tuan" or "le"))
+            return BadRequest(new { success = false, message = "loaiNgay không hợp lệ" });
+
+        if (khungGio is not ("sang" or "chieu" or "toi"))
+            return BadRequest(new { success = false, message = "khungGio không hợp lệ" });
+
+        var gia = await _context.BangGiums
+                .AsNoTracking()
+                .Where(x =>
+                        x.MaLoai == maLoai &&
+                        (x.LoaiNgay ?? "").ToLower() == loaiNgay &&
+                        (x.KhungGio ?? "").ToLower() == khungGio
+                )
+                .Select(x => (decimal?)x.Gia)   // để phân biệt null/not found
+                .FirstOrDefaultAsync();
+
+        if (gia == null)
+            return NotFound(new { success = false, message = "Không tìm thấy giá phù hợp" });
+
+        return Ok(new { success = true, data = new { gia } });
+    }
+		[HttpGet("receptionistcreated")]
+		public async Task<IActionResult> GetReceptionistCreated([FromQuery] int maNv)
 		{
-				loaiNgay = (loaiNgay ?? "").Trim().ToLower();
-				khungGio = (khungGio ?? "").Trim().ToLower();
+				if (maNv <= 0)
+						return BadRequest(new { success = false, message = "maNv không hợp lệ" });
 
-				if (maLoai <= 0)
-						return BadRequest(new { success = false, message = "maLoai không hợp lệ" });
+				try
+				{
+						var result = await _bookingService.GetReceptionistCreatedAsync(maNv);
 
-				if (loaiNgay is not ("thuong" or "cuoi_tuan" or "le"))
-						return BadRequest(new { success = false, message = "loaiNgay không hợp lệ" });
-
-				if (khungGio is not ("sang" or "chieu" or "toi"))
-						return BadRequest(new { success = false, message = "khungGio không hợp lệ" });
-
-				var gia = await _context.BangGiums
-						.AsNoTracking()
-						.Where(x =>
-								x.MaLoai == maLoai &&
-								(x.LoaiNgay ?? "").ToLower() == loaiNgay &&
-								(x.KhungGio ?? "").ToLower() == khungGio
-						)
-						.Select(x => (decimal?)x.Gia)   // để phân biệt null/not found
-						.FirstOrDefaultAsync();
-
-				if (gia == null)
-						return NotFound(new { success = false, message = "Không tìm thấy giá phù hợp" });
-
-				return Ok(new { success = true, data = new { gia } });
+						return Ok(new
+						{
+								success = true,
+								data = new
+								{
+										maNv = result.MaNv,
+										ten_dang_nhap = result.TenDangNhap
+								}
+						});
+				}
+				catch (InvalidOperationException ex)
+				{
+						return NotFound(new { success = false, message = ex.Message });
+				}
+				catch (Exception)
+				{
+						return StatusCode(500, new { success = false, message = "Đã xảy ra lỗi khi lấy tên đăng nhập" });
+				}
 		}
 
     // 2) Tạo phiếu đặt sân + ghi lịch đặt
@@ -97,9 +127,8 @@ public class BookingsController : ControllerBase
         {
             // Nếu bạn dùng JWT và claim name:
             // var username = User?.Identity?.Name;
-            string? username = null;
 
-            var maPhieu = await _bookingService.CreateBookingAsync(request, username);
+            var maPhieu = await _bookingService.CreateBookingAsync(request);
 
             _logger.LogInformation("Tạo phiếu đặt sân thành công. ma_phieu={MaPhieu}", maPhieu);
 
@@ -166,6 +195,53 @@ public class BookingsController : ControllerBase
         {
             _logger.LogError(ex, "Lỗi không xác định khi hủy phiếu {MaPhieu}", maPhieu);
             return StatusCode(500, new { success = false, message = "Đã xảy ra lỗi khi hủy đặt sân" });
+        }
+    }
+
+    // 5) Lấy tất cả booking của user đang đăng nhập
+    [HttpGet("me")]
+    [ProducesResponseType(typeof(List<UserBookingDto>), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+    public async Task<ActionResult<object>> GetMyBookings()
+    {
+        try
+        {
+            // Lấy thông tin user từ JWT token claims
+            int? maKh = null;
+            int? maNv = null;
+
+            // Lấy ma_kh claim
+            var maKhClaim = User.Claims.FirstOrDefault(c => c.Type == "ma_kh");
+            if (maKhClaim != null && int.TryParse(maKhClaim.Value, out var khId))
+            {
+                maKh = khId;
+            }
+
+            // Lấy ma_nv claim
+            var maNvClaim = User.Claims.FirstOrDefault(c => c.Type == "ma_nv");
+            if (maNvClaim != null && int.TryParse(maNvClaim.Value, out var nvId))
+            {
+                maNv = nvId;
+            }
+
+            if (!maKh.HasValue && !maNv.HasValue)
+            {
+                return Unauthorized(new { success = false, message = "Không tìm thấy thông tin user trong token" });
+            }
+
+            var bookings = await _bookingService.GetMyBookingsAsync(maKh, maNv);
+
+            return Ok(new
+            {
+                success = true,
+                data = bookings,
+                count = bookings.Count
+            });
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Lỗi khi lấy danh sách booking của user");
+            return StatusCode(500, new { success = false, message = "Đã xảy ra lỗi khi lấy danh sách booking" });
         }
     }
 }

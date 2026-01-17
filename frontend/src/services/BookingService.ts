@@ -30,10 +30,15 @@ export type CheckFieldAvailabilityRequest = {
   gioKetThuc: string; // HH:mm
 };
 
+export type ReceptionistCreatedResponse = {
+  maNv: number;
+  ten_dang_nhap: string;
+};
+
 export type CreateBookingRequest = {
   maKh: number;
   maSan: number;
-  nguoiTaoPhieu?: number | null;
+  nguoiTaoPhieu?: string | null;
   ngayDat: string; // YYYY-MM-DD
   gioBatDau: string; // HH:mm
   gioKetThuc: string; // HH:mm
@@ -62,16 +67,36 @@ export type BookingResponse = {
   tinhTrangTt: string;
 };
 
+export type UserBookingDto = {
+  maPhieu: number;
+  maHoaDon: number | null;
+  displayText: string;
+  ngayDat: string;
+  gioBatDau: string;
+  gioKetThuc: string;
+  trangThai: string;
+  tongTien: number;
+  tinhTrangTt: string;
+};
+
 type ApiWrap<T> = { success: boolean; message?: string; data: T };
 
-export async function checkAvailability(body: CheckFieldAvailabilityRequest) {
-  const res = await axios.post<ApiWrap<{ isAvailable: boolean }>>(`${API_BASE}/bookings/check-availability`, body);
+export async function checkAvailability(body: CheckFieldAvailabilityRequest, token?: string) {
+  const res = await axios.post<ApiWrap<{ isAvailable: boolean }>>(`${API_BASE}/bookings/check-availability`, body, token ? { headers: { Authorization: `Bearer ${token}` } } : undefined);
   return res.data;
 }
 
-export function getGia(maLoai: number, loaiNgay: string, khungGio: string) {
+export function getGia(maLoai: number, loaiNgay: string, khungGio: string, token?: string) {
   return axios.get(`${API_BASE}/bookings/price`, {
     params: { maLoai, loaiNgay, khungGio },
+    headers: token ? { Authorization: `Bearer ${token}` } : undefined,
+  });
+}
+
+export function getReceptionistCreated(maNv: number, token?: string) {
+  return axios.get(`${API_BASE}/bookings/receptionistcreated`, {
+    params: { maNv },
+    headers: token ? { Authorization: `Bearer ${token}` } : undefined,
   });
 }
 
@@ -87,5 +112,10 @@ export async function getBookingsByCustomer(maKh: number, token?: string) {
 
 export async function cancelBooking(maPhieu: number, token?: string) {
   const res = await axios.delete<ApiWrap<unknown>>(`${API_BASE}/bookings/${maPhieu}`, token ? { headers: { Authorization: `Bearer ${token}` } } : undefined);
+  return res.data;
+}
+
+export async function getMyBookings(token?: string) {
+  const res = await axios.get<ApiWrap<UserBookingDto[]>>(`${API_BASE}/bookings/me`, token ? { headers: { Authorization: `Bearer ${token}` } } : undefined);
   return res.data;
 }

@@ -8,7 +8,7 @@ import type { UserRole, PageType } from "../App";
 
 import { getSans, type SanDto } from "../services/SanService";
 import { getLoaiSan, type LoaiSanDto } from "../services/LoaiSanService";
-import { checkAvailability, createBooking, getGia } from "../services/BookingService";
+import { checkAvailability, createBooking, getGia, getReceptionistCreated } from "../services/BookingService";
 
 // Nếu bạn chưa có 2 API này thì tạo (mình đã gửi code backend trước đó)
 import { findCustomerByPhone, type KhachHangDto } from "../services/KhachHangService";
@@ -157,22 +157,24 @@ export function Booking({ userRole, onNavigate }: BookingProps) {
       alert(e.message);
       return;
     }
-
     setChecking(true);
     try {
       const ngayDat = date.toISOString().slice(0, 10);
-
+      const token = localStorage.getItem("token");
       const set = new Set<number>();
       for (let i = 0; i < filteredSans.length; i += 10) {
         const chunk = filteredSans.slice(i, i + 10);
         const resChunk = await Promise.all(
           chunk.map(async (s) => {
-            const r = await checkAvailability({
-              maSan: s.maSan,
-              ngayDat,
-              gioBatDau: normalizeTime(gioBatDau),
-              gioKetThuc: normalizeTime(gioKetThuc),
-            });
+            const r = await checkAvailability(
+              {
+                maSan: s.maSan,
+                ngayDat,
+                gioBatDau: normalizeTime(gioBatDau),
+                gioKetThuc: normalizeTime(gioKetThuc),
+              },
+              token ?? undefined
+            );
             return { maSan: s.maSan, ok: !!r.data.isAvailable };
           })
         );
@@ -216,7 +218,7 @@ export function Booking({ userRole, onNavigate }: BookingProps) {
       return;
     }
     let hinhThuc: "online" | "truc_tiep";
-    let nguoiTaoPhieu: number | null = null;
+    let nguoiTaoPhieu: string | null = null;
 
     let resolvedMaKh: number;
 
@@ -246,17 +248,24 @@ export function Booking({ userRole, onNavigate }: BookingProps) {
         alert("Không xác định được mã lễ tân (maNv). Vui lòng đăng nhập lại.");
         return;
       }
-      nguoiTaoPhieu = maNv;
+      const token = localStorage.getItem("token");
+      const res = await getReceptionistCreated(maNv, token ?? undefined);
+      nguoiTaoPhieu = res.data?.data?.ten_dang_nhap;
+      console.log("Nguoi tao phieu:", nguoiTaoPhieu);
     }
 
     try {
       const ngayDat = date.toISOString().slice(0, 10);
-      const av = await checkAvailability({
-        maSan: s.maSan,
-        ngayDat,
-        gioBatDau: normalizeTime(gioBatDau),
-        gioKetThuc: normalizeTime(gioKetThuc),
-      });
+      const token = localStorage.getItem("token");
+      const av = await checkAvailability(
+        {
+          maSan: s.maSan,
+          ngayDat,
+          gioBatDau: normalizeTime(gioBatDau),
+          gioKetThuc: normalizeTime(gioKetThuc),
+        },
+        token ?? undefined
+      );
 
       if (!av.data.isAvailable) {
         alert("Sân vừa có lịch bận. Vui lòng chọn sân/giờ khác.");
@@ -265,7 +274,7 @@ export function Booking({ userRole, onNavigate }: BookingProps) {
 
       const loaiNgay = getLoaiNgay(date);
       const khungGio = getKhungGio(gioBatDau);
-      const giaRes = await getGia(loaiOfSan.maLoai, loaiNgay, khungGio);
+      const giaRes = await getGia(loaiOfSan.maLoai, loaiNgay, khungGio, token ?? undefined);
       const gia = giaRes.data?.data?.gia ?? 0;
 
       const startMin = toMinutes(gioBatDau);
@@ -283,23 +292,24 @@ export function Booking({ userRole, onNavigate }: BookingProps) {
 
       // (5) tạo booking
       setBooking(true);
-      const createRes = await createBooking({
-        maKh: resolvedMaKh,
-        maSan: s.maSan,
-        nguoiTaoPhieu,
-        ngayDat,
-        gioBatDau: normalizeTime(gioBatDau),
-        gioKetThuc: normalizeTime(gioKetThuc),
-        hinhThuc,
-        tongTien,
-      });
+      const createRes = await createBooking(
+        {
+          maKh: resolvedMaKh,
+          maSan: s.maSan,
+          nguoiTaoPhieu,
+          ngayDat,
+          gioBatDau: normalizeTime(gioBatDau),
+          gioKetThuc: normalizeTime(gioKetThuc),
+          hinhThuc,
+          tongTien,
+        },
+        token ?? undefined
+      );
 
       if (!createRes.success) {
         alert(createRes.message ?? "Đặt sân thất bại");
         return;
       }
-      localStorage.removeItem("maNv");
-      localStorage.removeItem("maKh");
       alert(`Đặt sân thành công! Mã phiếu: ${createRes.data?.ma_phieu}`);
 
       setAvailableSet(new Set());
@@ -422,7 +432,7 @@ export function Booking({ userRole, onNavigate }: BookingProps) {
         {displaySans.map((s) => (
           <div key={s.maSan} className="border rounded-lg p-6 bg-white">
             <h3 className="mb-2 text-gray-900">{s.tenSan ?? `Sân ${s.maSan}`}</h3>
-            <div className="text-gray-600 mb-4">Tình trạng: {s.tinhTrang}</div>
+            {/* <div className="text-gray-600 mb-4">Tình trạng: {s.tinhTrang}</div> */}
 
             <button
               disabled={booking || (isLeTan && !customerInfo)}
