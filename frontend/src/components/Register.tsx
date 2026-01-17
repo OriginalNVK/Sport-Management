@@ -7,7 +7,7 @@ import { Label } from './ui/label';
 import { authService, type RegisterCustomerRequest } from '../services/AuthService';
 
 interface RegisterProps {
-  onRegisterSuccess: (role: 'customer' | 'manager') => void;
+  onRegisterSuccess: (role: 'customer' | 'manager' | 'receptionist' | 'staff') => void;
   onBackToLogin: () => void;
 }
 
@@ -78,7 +78,18 @@ export function Register({ onRegisterSuccess, onBackToLogin }: RegisterProps) {
     setIsLoading(true);
 
     try {
-      await authService.registerCustomer(formData);
+      const response = await authService.registerCustomer(formData);
+      
+      // Lưu token và user data vào localStorage
+      localStorage.setItem('access_token', response.token);
+      localStorage.setItem('refresh_token', response.refreshToken);
+      localStorage.setItem('user_data', JSON.stringify({
+        maNv: response.maNv,
+        maKh: response.maKh,
+        vaiTro: response.vaiTro,
+        tenDangNhap: formData.tenDangNhap,
+      }));
+      
       onRegisterSuccess('customer');
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Register failed. Please try again.');
