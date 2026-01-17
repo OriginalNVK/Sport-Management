@@ -112,7 +112,7 @@ const selectedItems = useMemo(() => {
   useEffect(() => {
   if (userRole !== 'customer') return;
 
-  const maKh = Number(localStorage.getItem('maKh')); // ✅ bạn thay đúng nguồn lấy maKh
+  const maKh = Number(JSON.parse(localStorage.getItem('user_data'))?.maKh); // ✅ bạn thay đúng nguồn lấy maKh
   if (!maKh) return;
 
   (async () => {
@@ -142,6 +142,12 @@ const selectedItems = useMemo(() => {
       if (list.length > 0) setSelectedPhieuId(list[0].maPhieu);
     } catch (e) {
       console.error(e);
+      console.log("Axios error detail:", {
+        message: e?.message,
+        status: e?.response?.status,
+        data: e?.response?.data,
+        url: e?.config?.url,
+      });
     }
   })();
 }, [userRole]);
@@ -186,6 +192,14 @@ const selectedItems = useMemo(() => {
     return;
   }
   
+  const loadServices = async () => {
+    setLoading(true);
+    const { data } = await bookingExtraService.getServiceList(selectedMaSan ?? 1);
+    setServices(data);
+    setLoading(false);
+  };
+
+
   try {
     setBatchLoading(true);
 
@@ -201,9 +215,11 @@ const selectedItems = useMemo(() => {
     setQtyByService({});
 
     // chuyển trang payment
-    onNavigate('payment');
+    // onNavigate('payment');
+    await loadServices();
   } catch (e: any) {
     alert(e?.message || 'Thêm dịch vụ thất bại');
+    await loadServices();
   } finally {
     setBatchLoading(false);
   }

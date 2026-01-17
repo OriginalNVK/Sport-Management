@@ -15,6 +15,7 @@ import { MyLeaveRequests } from './components/MyLeaveRequests';
 import { FieldStatusManagement } from './components/FieldStatusManagement';
 export type PageType = 'dashboard' | 'users' | 'stadiums' | 'booking' | 'services' | 'payment' | 'profile' | 'shifts' | 'leave-requests' | 'my-leave-requests' | 'field-status';
 export type UserRole = 'customer' | 'manager';
+import { useEffect } from 'react';
 
 export default function App() {
   // const [isAuthenticated, setIsAuthenticated] = useState(false);
@@ -23,14 +24,23 @@ export default function App() {
   const [userEmail, setUserEmail] = useState('');
   const [userRole, setUserRole] = useState<UserRole>('customer');
   // const [userRole, setUserRole] = useState<UserRole>('manager');
-  const [currentPage, setCurrentPage] = useState<PageType>('dashboard');
-
+  // const [currentPage, setCurrentPage] = useState<PageType>('dashboard');
+  const [currentPage, setCurrentPage] = useState<PageType>(() => {
+    const savedPage = localStorage.getItem('currentPage');
+    return (savedPage as PageType) || 'dashboard';
+  });
+  
+  useEffect(() => {
+    localStorage.setItem('currentPage', currentPage);
+  }, [currentPage]);
+  
   const handleLogin = (email: string, role: UserRole) => {
     setUserEmail(email);
     setUserRole(role);
     setIsAuthenticated(true);
     setShowRegister(false);
     setCurrentPage('dashboard');
+    localStorage.removeItem('currentPage');
   };
 
   const handleRegisterSuccess = (role: UserRole) => {

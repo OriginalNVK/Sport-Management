@@ -91,98 +91,97 @@ public class BookingExtrasService : IBookingExtrasService
     //     };
     // }
     public async Task<ChiTietDvResponse> AddChiTietDvAsync(AddChiTietDvRequest req)
-{
-    if (req.so_luong <= 0) throw new InvalidOperationException("Số lượng phải > 0.");
-
-    await using var tx = await _db.Database.BeginTransactionAsync(System.Data.IsolationLevel.Serializable);
-
-    // 1) phiếu tồn tại?
-    var phieu = await _db.PhieuDatSans
-        .FirstOrDefaultAsync(x => x.MaPhieu == req.ma_phieu);
-
-    if (phieu == null) throw new InvalidOperationException("Không tìm thấy phiếu đặt sân.");
-    if (phieu.TrangThai == "huy") throw new InvalidOperationException("Phiếu đã hủy, không thể thêm dịch vụ.");
-
-    // 2) lấy cơ sở của sân
-    var maCoSo = await _db.Sans
-        .Where(s => s.MaSan == phieu.MaSan)
-        .Select(s => s.MaCoSo)
-        .FirstOrDefaultAsync();
-
-    if (maCoSo == 0) throw new InvalidOperationException("Không xác định cơ sở của sân.");
-
-    // 3) dịch vụ tồn tại?
-    var dv = await _db.DichVus.FirstOrDefaultAsync(x => x.MaDv == req.ma_dv);
-    if (dv == null) throw new InvalidOperationException("Không tìm thấy dịch vụ.");
-    if (dv.TrangThai != null && dv.TrangThai.ToLower() == "ngung")
-        throw new InvalidOperationException("Dịch vụ đang ngừng hoạt động.");
-
-    var donGia = dv.DonGia ?? 0m;
-
-    // ✅ 4) kiểm tra đã có chi tiết dv cho (ma_phieu, ma_dv) chưa
-    var existed = await _db.ChiTietDvs
-        .FirstOrDefaultAsync(x => x.MaPhieu == req.ma_phieu && x.MaDv == req.ma_dv);
-
-    // ✅ 5) trừ tồn kho theo số lượng thêm (delta = req.so_luong)
-    var ton = await _db.TonKhoDichVus
-        .FirstOrDefaultAsync(x => x.MaDv == req.ma_dv && x.MaCoSo == maCoSo);
-
-    if (ton != null)
     {
-        if (ton.SoLuongTon < req.so_luong)
-            throw new InvalidOperationException("Không đủ số lượng tồn cho dịch vụ này.");
+        if (req.so_luong <= 0) throw new InvalidOperationException("Số lượng phải > 0.");
 
-        ton.SoLuongTon -= req.so_luong;
-        ton.NgayCapNhat = DateTime.UtcNow;
-    }
+        await using var tx = await _db.Database.BeginTransactionAsync(System.Data.IsolationLevel.Serializable);
+        // await using var tx = await _db.Database.BeginTransactionAsync(System.Data.IsolationLevel.ReadCommitted);
 
-    ChiTietDv ct;
-    decimal deltaThanhTien = donGia * req.so_luong; // phần tăng thêm để cộng TongTien
+        var phieu = await _db.PhieuDatSans
+            .FirstOrDefaultAsync(x => x.MaPhieu == req.ma_phieu);
 
-    if (existed != null)
-    {
-        // ✅ UPDATE thay vì tạo mới
-        existed.SoLuong = (existed.SoLuong ?? 0) + req.so_luong;
-        existed.DonGia = donGia;
-        existed.ThanhTien = (existed.SoLuong ?? 0) * donGia;
+        if (phieu == null) throw new InvalidOperationException("Không tìm thấy phiếu đặt sân.");
+        if (phieu.TrangThai == "huy") throw new InvalidOperationException("Phiếu đã hủy, không thể thêm dịch vụ.");
 
-        ct = existed;
-    }
-    else
-    {
-        // ✅ CREATE mới (như cũ)
-        var nextMaCt = (await _db.ChiTietDvs.MaxAsync(x => (int?)x.MaCt) ?? 0) + 1;
+        var maCoSo = await _db.Sans
+            .Where(s => s.MaSan == phieu.MaSan)
+            .Select(s => s.MaCoSo)
+            .FirstOrDefaultAsync();
 
-        ct = new ChiTietDv
+        if (maCoSo == 0) throw new InvalidOperationException("Không xác định cơ sở của sân.");
+
+        var dv = await _db.DichVus.FirstOrDefaultAsync(x => x.MaDv == req.ma_dv);
+        if (dv == null) throw new InvalidOperationException("Không tìm thấy dịch vụ.");
+        if (dv.TrangThai != null && dv.TrangThai.ToLower() == "ngung")
+            throw new InvalidOperationException("Dịch vụ đang ngừng hoạt động.");
+
+        var donGia = dv.DonGia ?? 0m;
+
+        var ton = await _db.TonKhoDichVus
+            .FromSqlInterpolated($@"
+                SELECT *
+                FROM ton_kho_dich_vu WITH (UPDLOCK, ROWLOCK)
+                WHERE ma_dv = {req.ma_dv} AND ma_co_so = {maCoSo}")
+            .FirstOrDefaultAsync();
+        
+        await Task.Delay(1000);
+
+        if (ton != null)
         {
-            MaCt = nextMaCt,
-            MaPhieu = req.ma_phieu,
-            MaDv = req.ma_dv,
-            SoLuong = req.so_luong,
-            DonGia = donGia,
-            ThanhTien = deltaThanhTien
+            if (ton.SoLuongTon < req.so_luong)
+                throw new InvalidOperationException("Không đủ số lượng tồn cho dịch vụ này.");
+
+            ton.SoLuongTon -= req.so_luong;
+            ton.NgayCapNhat = DateTime.UtcNow;
+        }
+        
+        var existed = await _db.ChiTietDvs
+            .FirstOrDefaultAsync(x => x.MaPhieu == req.ma_phieu && x.MaDv == req.ma_dv);
+
+        ChiTietDv ct;
+        decimal deltaThanhTien = donGia * req.so_luong; 
+
+        if (existed != null)
+        {
+            existed.SoLuong = (existed.SoLuong ?? 0) + req.so_luong;
+            existed.DonGia = donGia;
+            existed.ThanhTien = (existed.SoLuong ?? 0) * donGia;
+
+            ct = existed;
+        }
+        else
+        {
+            // var nextMaCt = (await _db.ChiTietDvs.MaxAsync(x => (int?)x.MaCt) ?? 0) + 1;
+
+            ct = new ChiTietDv
+            {
+                // MaCt = nextMaCt,
+                MaPhieu = req.ma_phieu,
+                MaDv = req.ma_dv,
+                SoLuong = req.so_luong,
+                DonGia = donGia,
+                ThanhTien = deltaThanhTien
+            };
+
+            _db.ChiTietDvs.Add(ct);
+        }
+
+        phieu.TongTien += deltaThanhTien;
+
+        await _db.SaveChangesAsync();
+        await tx.CommitAsync();
+
+        return new ChiTietDvResponse
+        {
+            ma_ct = ct.MaCt,
+            ma_phieu = ct.MaPhieu ?? throw new InvalidOperationException("ChiTietDv.MaPhieu bị null"),
+            ma_dv = ct.MaDv ?? throw new InvalidOperationException("ChiTietDv.MaDv bị null"),
+            ten_dv = dv.TenDv,
+            so_luong = ct.SoLuong ?? throw new InvalidOperationException("ChiTietDv.SoLuong bị null"),
+            don_gia = ct.DonGia ?? 0m,
+            thanh_tien = ct.ThanhTien ?? 0m
         };
-
-        _db.ChiTietDvs.Add(ct);
     }
-
-    // ✅ cộng tổng tiền phiếu theo phần tăng thêm
-    phieu.TongTien += deltaThanhTien;
-
-    await _db.SaveChangesAsync();
-    await tx.CommitAsync();
-
-    return new ChiTietDvResponse
-    {
-        ma_ct = ct.MaCt,
-        ma_phieu = ct.MaPhieu ?? throw new InvalidOperationException("ChiTietDv.MaPhieu bị null"),
-        ma_dv = ct.MaDv ?? throw new InvalidOperationException("ChiTietDv.MaDv bị null"),
-        ten_dv = dv.TenDv,
-        so_luong = ct.SoLuong ?? throw new InvalidOperationException("ChiTietDv.SoLuong bị null"),
-        don_gia = ct.DonGia ?? 0m,
-        thanh_tien = ct.ThanhTien ?? 0m
-    };
-}
 
     public async Task<LichHlvResponse> AddLichHlvAsync(AddLichHlvRequest req)
     {
@@ -294,7 +293,7 @@ public class BookingExtrasService : IBookingExtrasService
 
     public async Task<bool> DeleteChiTietDvAsync(int ma_ct)
     {
-        await using var tx = await _db.Database.BeginTransactionAsync(System.Data.IsolationLevel.Serializable);
+        await using var tx = await _db.Database.BeginTransactionAsync(System.Data.IsolationLevel.ReadCommitted);
 
         var ct = await _db.ChiTietDvs.FirstOrDefaultAsync(x => x.MaCt == ma_ct);
         if (ct == null) return false;

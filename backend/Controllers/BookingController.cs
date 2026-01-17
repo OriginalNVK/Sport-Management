@@ -10,7 +10,7 @@ namespace backend.Controllers;
 [ApiController]
 [Route("api/v1/[controller]")]
 [Produces("application/json")]
-[Authorize]
+// [Authorize]
 public class BookingsController : ControllerBase
 {
     private readonly SportContext _context;

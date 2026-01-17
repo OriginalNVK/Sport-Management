@@ -221,7 +221,7 @@ export function Booking({ userRole, onNavigate }: BookingProps) {
     let resolvedMaKh: number;
 
     if (!isLeTan) {
-      const stored = localStorage.getItem("maKh");
+      const stored = JSON.parse(localStorage.getItem('user_data')).maKh;
       const mk = stored ? Number(stored) : NaN;
 
       if (!mk || Number.isNaN(mk)) {

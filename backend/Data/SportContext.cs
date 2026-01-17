@@ -198,6 +198,9 @@ public partial class SportContext : DbContext
             entity.HasOne(d => d.MaPhieuNavigation).WithMany(p => p.ChiTietDvs)
                 .HasForeignKey(d => d.MaPhieu)
                 .HasConstraintName("FK__chi_tiet___ma_ph__76969D2E");
+            entity.Property(e => e.MaCt)
+                .ValueGeneratedOnAdd()
+                .HasColumnName("ma_ct");
         });
 
         modelBuilder.Entity<ChinhSachHuy>(entity =>
