@@ -23,6 +23,15 @@ export interface ApproveLeaveRequest {
   trangThai: string; // da_duyet hoặc tu_choi
 }
 
+export interface PhantomReadDemoResult {
+  lanDoc1: LeaveRequestDto[];
+  lanDoc2: LeaveRequestDto[];
+  message: string;
+  startTime: string;
+  endTime: string;
+  hasPhantomRead: boolean;
+}
+
 class LeaveService {
   /**
    * Lấy token từ localStorage
@@ -42,16 +51,29 @@ class LeaveService {
     };
   }
 
-  /**
-   * Lấy danh sách tất cả đơn nghỉ phép
-   */
+
   async getAllLeaveRequests(): Promise<LeaveRequestDto[]> {
     try {
-      const response = await axios.get<LeaveRequestDto[]>(
-        `${API_BASE_URL}/leave-requests`,
+      // ========== MODE 1: NORMAL - Bình thường ==========
+      // const response = await axios.get<LeaveRequestDto[]>(
+      //   `${API_BASE_URL}/leave-requests`,
+      //   this.getConfig()
+      // );
+      // return response.data;
+      
+      // ========== MODE 2: DEMO FIXED - Đã fix phantom read ==========
+      // Uncomment để demo: Quản lý dùng SERIALIZABLE lock
+      // Khi quản lý đang đọc danh sách, nhân viên gửi đơn mới sẽ bị block (chờ)
+      // Trả về lần đọc 2 (không có phantom read do đã lock)
+
+      const response = await axios.get<PhantomReadDemoResult>(
+        `${API_BASE_URL}/leave-requests/fixed-phantom-demo`,
         this.getConfig()
       );
-      return response.data;
+      console.log('Fixed Phantom Read Demo Response:', response.data);
+      console.log('lanDoc2:', response.data.lanDoc2);
+      return response.data.lanDoc2 || [];
+
     } catch (error) {
       if (axios.isAxiosError(error)) {
         throw new Error(error.response?.data?.message || 'Lấy danh sách đơn nghỉ phép thất bại');
@@ -60,10 +82,7 @@ class LeaveService {
     }
   }
 
-  /**
-   * Lấy thông tin đơn nghỉ phép theo mã
-   * @param maDon Mã đơn nghỉ phép
-   */
+
   async getLeaveRequestById(maDon: number): Promise<LeaveRequestDto> {
     try {
       const response = await axios.get<LeaveRequestDto>(
@@ -79,10 +98,7 @@ class LeaveService {
     }
   }
 
-  /**
-   * Lấy danh sách đơn nghỉ phép theo nhân viên
-   * @param maNv Mã nhân viên
-   */
+
   async getLeaveRequestsByEmployee(maNv: number): Promise<LeaveRequestDto[]> {
     try {
       const response = await axios.get<LeaveRequestDto[]>(
@@ -98,10 +114,7 @@ class LeaveService {
     }
   }
 
-  /**
-   * Lấy danh sách đơn nghỉ phép theo trạng thái
-   * @param trangThai Trạng thái (cho_duyet, da_duyet, tu_choi)
-   */
+
   async getLeaveRequestsByStatus(trangThai: string): Promise<LeaveRequestDto[]> {
     try {
       const response = await axios.get<LeaveRequestDto[]>(
@@ -117,18 +130,28 @@ class LeaveService {
     }
   }
 
-  /**
-   * Tạo mới đơn nghỉ phép
-   * @param request Thông tin đơn nghỉ phép mới
-   */
+
   async createLeaveRequest(request: CreateLeaveRequest): Promise<{ message: string; maDon: number }> {
     try {
+      // ========== MODE 1: NORMAL ==========
+      // const response = await axios.post<{ message: string; maDon: number }>(
+      //   `${API_BASE_URL}/leave-requests`,
+      //   request,
+      //   this.getConfig()
+      // );
+      // return response.data;
+      
+      // ========== MODE 2:  BLOCK - Nhân viên bị chờ khi quản lý đang duyệt  ==========
+      
+      console.log(' [MODE 2] Nhân viên gửi đơn - sẽ bị chờ nếu quản lý đang đọc...');
       const response = await axios.post<{ message: string; maDon: number }>(
-        `${API_BASE_URL}/leave-requests`,
+        `${API_BASE_URL}/leave-requests/will-block`,
         request,
         this.getConfig()
       );
+      console.log(' [MODE 2] Nhân viên gửi đơn thành công!');
       return response.data;
+
     } catch (error) {
       if (axios.isAxiosError(error)) {
         throw new Error(error.response?.data?.message || 'Tạo đơn nghỉ phép thất bại');
@@ -172,6 +195,84 @@ class LeaveService {
     } catch (error) {
       if (axios.isAxiosError(error)) {
         throw new Error(error.response?.data?.message || 'Xóa đơn nghỉ phép thất bại');
+      }
+      throw error;
+    }
+  }
+
+  // =============================================
+  // PHANTOM READ DEMO METHODS
+  // =============================================
+
+  /**
+   * [DEMO] Đọc danh sách đơn nghỉ phép 2 lần (CÓ LỖI PHANTOM READ)
+   */
+  async getLeaveRequestsWithPhantomRead(): Promise<PhantomReadDemoResult> {
+    try {
+      const response = await axios.get<PhantomReadDemoResult>(
+        `${API_BASE_URL}/leave-requests/phantom-demo`,
+        this.getConfig()
+      );
+      return response.data;
+    } catch (error) {
+      if (axios.isAxiosError(error)) {
+        throw new Error(error.response?.data?.message || 'Demo phantom read thất bại');
+      }
+      throw error;
+    }
+  }
+
+  /**
+   * [DEMO] Đọc danh sách đơn nghỉ phép 2 lần (ĐÃ FIX PHANTOM READ)
+   */
+  async getLeaveRequestsFixedPhantomRead(): Promise<PhantomReadDemoResult> {
+    try {
+      const response = await axios.get<PhantomReadDemoResult>(
+        `${API_BASE_URL}/leave-requests/fixed-phantom-demo`,
+        this.getConfig()
+      );
+      return response.data;
+    } catch (error) {
+      if (axios.isAxiosError(error)) {
+        throw new Error(error.response?.data?.message || 'Demo fixed phantom read thất bại');
+      }
+      throw error;
+    }
+  }
+
+  /**
+   * [DEMO] Tạo đơn nghỉ phép (NORMAL - không bị block)
+   */
+  async createLeaveRequestNormal(request: CreateLeaveRequest): Promise<{ message: string; maDon: number }> {
+    try {
+      const response = await axios.post<{ message: string; maDon: number }>(
+        `${API_BASE_URL}/leave-requests/normal`,
+        request,
+        this.getConfig()
+      );
+      return response.data;
+    } catch (error) {
+      if (axios.isAxiosError(error)) {
+        throw new Error(error.response?.data?.message || 'Tạo đơn nghỉ phép (normal) thất bại');
+      }
+      throw error;
+    }
+  }
+
+  /**
+   * [DEMO] Tạo đơn nghỉ phép (SẼ BỊ BLOCK nếu có transaction đang lock)
+   */
+  async createLeaveRequestWillBlock(request: CreateLeaveRequest): Promise<{ message: string; maDon: number; waitedSeconds?: number }> {
+    try {
+      const response = await axios.post<{ message: string; maDon: number; waitedSeconds?: number }>(
+        `${API_BASE_URL}/leave-requests/will-block`,
+        request,
+        this.getConfig()
+      );
+      return response.data;
+    } catch (error) {
+      if (axios.isAxiosError(error)) {
+        throw new Error(error.response?.data?.message || 'Tạo đơn nghỉ phép (will block) thất bại');
       }
       throw error;
     }
