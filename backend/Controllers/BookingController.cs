@@ -216,4 +216,27 @@ public class BookingsController : ControllerBase
             return StatusCode(500, new { success = false, message = "Đã xảy ra lỗi khi lấy danh sách booking" });
         }
     }
+
+    // 6) Lấy tất cả booking (for admin)
+    [HttpGet("all")]
+    [ProducesResponseType(typeof(List<UserBookingDto>), StatusCodes.Status200OK)]
+    public async Task<ActionResult<object>> GetAllBookings([FromQuery] string? tinhTrangTt = null)
+    {
+        try
+        {
+            var bookings = await _bookingService.GetAllBookingsAsync(tinhTrangTt);
+
+            return Ok(new
+            {
+                success = true,
+                data = bookings,
+                count = bookings.Count
+            });
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Lỗi khi lấy danh sách tất cả booking");
+            return StatusCode(500, new { success = false, message = "Đã xảy ra lỗi khi lấy danh sách booking" });
+        }
+    }
 }

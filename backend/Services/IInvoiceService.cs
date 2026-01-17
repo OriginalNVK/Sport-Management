@@ -48,4 +48,19 @@ public interface IInvoiceService
     /// <param name="maHd">Mã hóa đơn</param>
     /// <returns>Thành công hay không</returns>
     Task<bool> CancelInvoiceAsync(int maHd);
+
+    /// <summary>
+    /// Cập nhật mã giảm giá cho hóa đơn (với READ COMMITTED)
+    /// </summary>
+    /// <param name="maHd">Mã hóa đơn</param>
+    /// <param name="maGiamGia">Mã giảm giá</param>
+    /// <returns>Kết quả cập nhật</returns>
+    Task<InvoiceResponse> UpdateInvoiceAsync(int maHd, string? maGiamGia, bool testRollback = false);
+
+    /// <summary>
+    /// Xem chi tiết hóa đơn với REPEATABLE READ
+    /// </summary>
+    /// <param name="maHd">Mã hóa đơn</param>
+    /// <returns>Chi tiết hóa đơn</returns>
+    Task<InvoiceResponse?> GetInvoiceDetailWithRepeatableReadAsync(int maHd);
 }

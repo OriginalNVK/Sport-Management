@@ -15,8 +15,6 @@ builder.Services.AddDbContext<SportContext>(options =>
     options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")
         ?? throw new InvalidOperationException("Connection string 'DefaultConnection' not found."));
 });
-var cs = builder.Configuration.GetConnectionString("DefaultConnection");
-Console.WriteLine(">>> DefaultConnection = " + cs);
 
 // Configure CORS
 builder.Services.AddCors(options =>
@@ -25,7 +23,8 @@ builder.Services.AddCors(options =>
     {
         policy.WithOrigins("http://localhost:5173")
               .AllowAnyMethod()
-              .AllowAnyHeader();
+              .AllowAnyHeader()
+              .AllowCredentials();
     });
 });
 

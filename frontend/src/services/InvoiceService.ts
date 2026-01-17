@@ -5,8 +5,11 @@ const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
 // Interfaces cho DTOs
 export interface CreateInvoiceRequest {
   maPhieu: number;
-  danhSachMaUuDai?: number[];
-  phanTramThue: number;
+  
+  // Mã giảm giá duy nhất (VD: "SLV5")
+  maGiamGia?: string | null;
+  
+  phanTramThue?: number;
 }
 
 export interface InvoiceResponse {
@@ -23,6 +26,19 @@ export interface InvoiceResponse {
   ngayDat?: string;
   gioBatDau?: string;
   gioKetThuc?: string;
+}
+
+export interface InvoiceDetailResponse {
+  maHd: number;
+  maPhieu: number;
+  ngayLap: string;
+  tongTien: number;
+  thue: number;
+  giamGia: number;
+  tongCuoi: number;
+  tinhTrangTt?: string;
+  tenKhachHang?: string;
+  tenSan?: string;
 }
 
 export interface PaymentRequest {
@@ -51,11 +67,17 @@ class InvoiceService {
    */
   async createInvoice(request: CreateInvoiceRequest): Promise<number> {
     try {
-      const response = await axios.post<number>(
+      const payload = {
+        maPhieu: request.maPhieu,
+        maGiamGia: request.maGiamGia || null,
+        phanTramThue: request.phanTramThue || 10
+      };
+      
+      const response = await axios.post<{ success: boolean; data: { ma_hd: number } }>(
         `${API_BASE_URL}/Invoices`,
-        request
+        payload
       );
-      return response.data;
+      return response.data.data.ma_hd;
     } catch (error) {
       if (axios.isAxiosError(error)) {
         throw new Error(error.response?.data?.message || 'Lỗi khi tạo hóa đơn');
@@ -95,27 +117,6 @@ class InvoiceService {
     try {
       const response = await axios.get<InvoiceResponse[]>(
         `${API_BASE_URL}/Invoices/customer/${maKh}`
-      );
-      return response.data;
-    } catch (error) {
-      if (axios.isAxiosError(error)) {
-        throw new Error(error.response?.data?.message || 'Lỗi khi lấy danh sách hóa đơn');
-      }
-      throw error;
-    }
-  }
-
-  /**
-   * Lấy tất cả hóa đơn (có thể lọc theo trạng thái)
-   * @param trangThai Trạng thái thanh toán (chua_tt, da_tt, hoan_tien)
-   * @returns Danh sách hóa đơn
-   */
-  async getAllInvoices(trangThai?: string): Promise<InvoiceResponse[]> {
-    try {
-      const params = trangThai ? { trangThai } : {};
-      const response = await axios.get<InvoiceResponse[]>(
-        `${API_BASE_URL}/Invoices/all`,
-        { params }
       );
       return response.data;
     } catch (error) {
@@ -173,13 +174,73 @@ class InvoiceService {
     try {
       const token = localStorage.getItem('token');
       const response = await axios.get<{ success: boolean; data: InvoiceResponse[] }>(
-        `${API_BASE_URL}/Invoices/all/da_tt`,
+        `${API_BASE_URL}/Invoices/all?trangThai=da_tt`,
         token ? { headers: { Authorization: `Bearer ${token}` } } : undefined
       );
       return response.data.data || [];
     } catch (error) {
       if (axios.isAxiosError(error)) {
         throw new Error(error.response?.data?.message || 'Lỗi khi lấy danh sách hóa đơn đã thanh toán');
+      }
+      throw error;
+    }
+  }
+
+  /**
+   * Lấy tất cả hóa đơn (for admin)
+   * @param token Token authentication
+   * @returns Danh sách tất cả hóa đơn
+   */
+  async getAllInvoices(token?: string): Promise<InvoiceResponse[]> {
+    try {
+      const response = await axios.get<{ success: boolean; data: InvoiceResponse[] }>(
+        `${API_BASE_URL}/Invoices/all`,
+        token ? { headers: { Authorization: `Bearer ${token}` } } : undefined
+      );
+      return response.data.data || [];
+    } catch (error) {
+      if (axios.isAxiosError(error)) {
+        throw new Error(error.response?.data?.message || 'Lỗi khi lấy danh sách hóa đơn');
+      }
+      throw error;
+    }
+  }
+
+  /**
+   * Cập nhật hóa đơn (thêm/thay đổi mã giảm giá)
+   * @param maHd Mã hóa đơn
+   * @param data Dữ liệu cập nhật (maGiamGia, testRollback)
+   * @returns true nếu cập nhật thành công
+   */
+  async updateInvoice(maHd: number, data: { maGiamGia?: string | null; testRollback?: boolean }): Promise<boolean> {
+    try {
+      const response = await axios.put<{ success: boolean }>(
+        `${API_BASE_URL}/Invoices/${maHd}`,
+        data
+      );
+      return response.data.success;
+    } catch (error) {
+      if (axios.isAxiosError(error)) {
+        throw new Error(error.response?.data?.message || 'Lỗi khi cập nhật hóa đơn');
+      }
+      throw error;
+    }
+  }
+
+  /**
+   * Xem chi tiết hóa đơn với REPEATABLE READ (tránh Unrepeatable Read)
+   * @param maHd Mã hóa đơn
+   * @returns Chi tiết hóa đơn
+   */
+  async getInvoiceDetail(maHd: number): Promise<InvoiceDetailResponse> {
+    try {
+      const response = await axios.get<{ success: boolean; data: InvoiceDetailResponse }>(
+        `${API_BASE_URL}/Invoices/${maHd}/detail`
+      );
+      return response.data.data;
+    } catch (error) {
+      if (axios.isAxiosError(error)) {
+        throw new Error(error.response?.data?.message || 'Lỗi khi xem chi tiết hóa đơn');
       }
       throw error;
     }

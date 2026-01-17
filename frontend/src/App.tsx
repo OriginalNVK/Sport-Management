@@ -8,9 +8,10 @@ import { StadiumManagement } from './components/StadiumManagement';
 import { Booking } from './components/Booking';
 import { ServiceManagement } from './components/ServiceManagement';
 import { Payment } from './components/Payment';
+import { AdminPayment } from './components/AdminPayment';
 import { Profile } from './components/Profile';
 export type PageType = 'dashboard' | 'users' | 'stadiums' | 'booking' | 'services' | 'payment' | 'profile';
-export type UserRole = 'customer' | 'manager';
+export type UserRole = 'customer' | 'manager' | 'receptionist' | 'staff' | 'cashier';
 
 export default function App() {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
@@ -57,7 +58,7 @@ export default function App() {
       case 'services':
         return <ServiceManagement userRole={userRole} onNavigate={setCurrentPage} />;
       case 'payment':
-        return <Payment userRole={userRole} />;
+        return userRole === 'manager' || userRole === 'cashier' ? <AdminPayment /> : <Payment userRole={userRole} />;
       case 'profile':
         return <Profile userEmail={userEmail} userRole={userRole} />;
       default:

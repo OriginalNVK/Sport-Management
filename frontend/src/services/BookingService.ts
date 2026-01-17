@@ -72,6 +72,7 @@ export type UserBookingDto = {
   trangThai: string;
   tongTien: number;
   tinhTrangTt: string;
+  danhSachDichVu?: string | null;
 };
 
 type ApiWrap<T> = { success: boolean; message?: string; data: T };
@@ -103,6 +104,30 @@ export async function cancelBooking(maPhieu: number, token?: string) {
 }
 
 export async function getMyBookings(token?: string) {
-  const res = await axios.get<ApiWrap<UserBookingDto[]>>(`${API_BASE}/bookings/me`, token ? { headers: { Authorization: `Bearer ${token}` } } : undefined);
+  const res = await axios.get<ApiWrap<UserBookingDto[]>>(`${API_BASE}/Bookings/me`, token ? { headers: { Authorization: `Bearer ${token}` } } : undefined);
   return res.data;
 }
+
+// Service functions for admin
+const bookingService = {
+  /**
+   * Lấy danh sách booking chưa thanh toán (for admin)
+   * @param token Token authentication
+   * @returns Danh sách booking chưa thanh toán
+   */
+  async getUnpaidBookings(token?: string): Promise<UserBookingDto[]> {
+    try {
+      // Sử dụng endpoint /bookings/all với filter tinhTrangTt=chua_tt
+      const res = await axios.get<ApiWrap<UserBookingDto[]>>(
+        `${API_BASE}/Bookings/all?tinhTrangTt=chua_tt`,
+        token ? { headers: { Authorization: `Bearer ${token}` } } : undefined
+      );
+      return res.data.data || [];
+    } catch (error) {
+      console.error('Error fetching unpaid bookings:', error);
+      throw error;
+    }
+  }
+};
+
+export { bookingService };

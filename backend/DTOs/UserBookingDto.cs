@@ -14,4 +14,10 @@ public class UserBookingDto
     public string? TrangThai { get; set; }
     public decimal? TongTien { get; set; }
     public string? TinhTrangTt { get; set; }
+
+    /// <summary>
+    /// Danh sách dịch vụ (tên + số lượng + đơn vị) khi phiếu chưa thanh toán
+    /// Ví dụ: "Nước suối x2 chai, Khăn tắm x1 cái"
+    /// </summary>
+    public string? DanhSachDichVu { get; set; }
 }
