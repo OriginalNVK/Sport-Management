@@ -1,22 +1,14 @@
 namespace backend.DTOs;
 
-/// <summary>
-/// Request để tạo hóa đơn mới
-/// </summary>
 public class CreateInvoiceRequest
 {
-    /// <summary>
-    /// Mã phiếu đặt sân
-    /// </summary>
     public int MaPhieu { get; set; }
 
     /// <summary>
-    /// Danh sách mã ưu đãi áp dụng (optional)
+    /// Mã giảm giá dạng string (ví dụ: "SLV5", "GOLD10")
+    /// Có thể NULL nếu không áp dụng giảm giá
     /// </summary>
-    public List<int>? DanhSachMaUuDai { get; set; }
+    public string? MaGiamGia { get; set; }
 
-    /// <summary>
-    /// Phần trăm thuế (mặc định 10%)
-    /// </summary>
     public decimal PhanTramThue { get; set; } = 10.0m;
 }

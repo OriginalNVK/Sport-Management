@@ -7,7 +7,7 @@ import { Label } from "./ui/label";
 import { authService } from "../services/AuthService";
 
 interface LoginProps {
-  onLogin: (username: string, role: "customer" | "manager" | "receptionist" | "staff") => void;
+  onLogin: (username: string, role: "customer" | "manager" | "receptionist" | "staff" | "cashier") => void;
   onShowRegister?: () => void;
 }
 
@@ -28,15 +28,31 @@ export function Login({ onLogin, onShowRegister }: LoginProps) {
         matKhau: password,
       });
 
+      // Lưu token và user data vào localStorage
+      localStorage.setItem("access_token", response.token);
+      localStorage.setItem("refresh_token", response.refreshToken);
+      localStorage.setItem(
+        "user_data",
+        JSON.stringify({
+          maNv: response.maNv,
+          maKh: response.maKh,
+          vaiTro: response.vaiTro,
+          tenDangNhap: username,
+        })
+      );
+
       // Xác định role dựa trên vaiTro từ backend
-      let role: "customer" | "manager" | "receptionist" | "staff" = "customer";
+      let role: "customer" | "manager" | "receptionist" | "staff" | "cashier" = "customer";
       if (response.vaiTro === "quan_ly" || response.vaiTro === "admin") {
         role = "manager";
       } else if (response.vaiTro === "le_tan") {
         role = "receptionist";
       } else if (response.vaiTro === "nhan_vien") {
         role = "staff";
+      } else if (response.vaiTro === "thu_ngan") {
+        role = "cashier";
       }
+
       onLogin(username, role);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Đăng nhập thất bại");

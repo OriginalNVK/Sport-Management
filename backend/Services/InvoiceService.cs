@@ -2,6 +2,7 @@ using backend.Data;
 using backend.DTOs;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Data.SqlClient;
+using backend.DTOs;
 using System.Data;
 
 namespace backend.Services;
@@ -19,29 +20,18 @@ public class InvoiceService : IInvoiceService
     {
         try
         {
-            // Tạo DataTable cho danh sách mã ưu đãi
-            var uuDaiTable = new DataTable();
-            uuDaiTable.Columns.Add("ma_uu_dai", typeof(int));
-            
-            if (request.DanhSachMaUuDai != null && request.DanhSachMaUuDai.Any())
-            {
-                foreach (var maUuDai in request.DanhSachMaUuDai)
-                {
-                    uuDaiTable.Rows.Add(maUuDai);
-                }
-            }
-
             // Tạo các parameters cho stored procedure
             var parameters = new[]
             {
                 new SqlParameter("@MaPhieu", SqlDbType.Int) { Value = request.MaPhieu },
-                new SqlParameter("@DanhSachMaUuDai", SqlDbType.Structured) 
-                { 
-                    Value = uuDaiTable,
-                    TypeName = "ListMaUuDai"
+                new SqlParameter("@MaGiamGia", SqlDbType.NVarChar, 50)
+                {
+                    Value = string.IsNullOrWhiteSpace(request.MaGiamGia)
+                        ? DBNull.Value
+                        : request.MaGiamGia.Trim().ToUpper()
                 },
-                new SqlParameter("@PhanTramThue", SqlDbType.Decimal) 
-                { 
+                new SqlParameter("@PhanTramThue", SqlDbType.Decimal)
+                {
                     Value = request.PhanTramThue,
                     Precision = 5,
                     Scale = 2
@@ -51,7 +41,7 @@ public class InvoiceService : IInvoiceService
             // Gọi stored procedure và lấy kết quả
             var result = await _context.Database
                 .SqlQueryRaw<InvoiceResultDto>(
-                    "EXEC sp_TaoHoaDon @MaPhieu, @DanhSachMaUuDai, @PhanTramThue",
+                    "EXEC sp_TaoHoaDon @MaPhieu, @MaGiamGia, @PhanTramThue",
                     parameters)
                 .ToListAsync();
 
@@ -121,6 +111,10 @@ public class InvoiceService : IInvoiceService
 
     public async Task<List<InvoiceResponse>> GetAllInvoicesAsync(string? trangThai = null)
     {
+
+        // Read uncommitted
+        await _context.Database.BeginTransactionAsync(System.Data.IsolationLevel.ReadCommitted);
+
         var query = _context.HoaDons.AsQueryable();
 
         // Lọc theo trạng thái nếu có
@@ -258,6 +252,84 @@ public class InvoiceService : IInvoiceService
         {
             await transaction.RollbackAsync();
             throw;
+        }
+    }
+
+    public async Task<InvoiceResponse> UpdateInvoiceAsync(int maHd, string? maGiamGia, bool testRollback = false)
+    {
+        try
+        {
+            var maGiamGiaParam = new SqlParameter("@MaGiamGia",
+                string.IsNullOrEmpty(maGiamGia) ? (object)DBNull.Value : maGiamGia);
+            var maHdParam = new SqlParameter("@MaHd", maHd);
+            var testRollbackParam = new SqlParameter("@TestRollback", testRollback);
+
+            var result = await _context.Database
+                .SqlQueryRaw<UpdateInvoiceResultDto>(
+                    "EXEC sp_CapNhatHoaDon @MaHd, @MaGiamGia, @TestRollback",
+                    maHdParam,
+                    maGiamGiaParam,
+                    testRollbackParam)
+                .ToListAsync();
+
+            if (result != null && result.Any())
+            {
+                var invoice = result.First();
+                return new InvoiceResponse
+                {
+                    MaHd = invoice.MaHd,
+                    MaPhieu = invoice.MaPhieu,
+                    NgayLap = DateTime.Now,
+                    TongTien = invoice.TongTien,
+                    Thue = invoice.Thue,
+                    GiamGia = invoice.GiamGia,
+                    TongCuoi = invoice.TongCuoi
+                };
+            }
+
+            throw new InvalidOperationException("Không thể cập nhật hóa đơn");
+        }
+        catch (SqlException ex)
+        {
+            throw new InvalidOperationException($"Lỗi khi cập nhật hóa đơn: {ex.Message}", ex);
+        }
+    }
+
+    public async Task<InvoiceResponse?> GetInvoiceDetailWithRepeatableReadAsync(int maHd)
+    {
+        try
+        {
+            var maHdParam = new SqlParameter("@MaHd", maHd);
+
+            var result = await _context.Database
+                .SqlQueryRaw<InvoiceDetailResultDto>(
+                    "EXEC sp_XemThongTinHoaDon @MaHd",
+                    maHdParam)
+                .ToListAsync();
+
+            if (result != null && result.Any())
+            {
+                var invoice = result.First();
+                return new InvoiceResponse
+                {
+                    MaHd = invoice.MaHd,
+                    MaPhieu = invoice.MaPhieu,
+                    NgayLap = invoice.NgayLap,
+                    TongTien = invoice.TongTien,
+                    Thue = invoice.Thue,
+                    GiamGia = invoice.GiamGia,
+                    TongCuoi = invoice.TongCuoi,
+                    TinhTrangTt = invoice.TinhTrangTt,
+                    TenKhachHang = invoice.TenKhachHang,
+                    TenSan = invoice.TenSan
+                };
+            }
+
+            return null;
+        }
+        catch (SqlException ex)
+        {
+            throw new InvalidOperationException($"Lỗi khi xem chi tiết hóa đơn: {ex.Message}", ex);
         }
     }
 }
