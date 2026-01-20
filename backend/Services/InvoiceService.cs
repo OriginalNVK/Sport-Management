@@ -2,7 +2,6 @@ using backend.Data;
 using backend.DTOs;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Data.SqlClient;
-using backend.DTOs;
 using System.Data;
 
 namespace backend.Services;

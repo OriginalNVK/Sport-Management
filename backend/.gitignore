@@ -368,3 +368,6 @@ secrets.json
 
 bin/
 obj/
+
+backend/bin/
+backend/obj/

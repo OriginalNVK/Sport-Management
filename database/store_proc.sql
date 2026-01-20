@@ -298,7 +298,6 @@ BEGIN
         DECLARE @TongCuoi DECIMAL(18,2);
         
         -- Đọc thông tin hóa đơn hiện tại
-        -- Comment UPDLOCK để T2 có thể đọc uncommitted data
         SELECT 
             @MaPhieu = hd.ma_phieu,
             @TongTienGoc = hd.tong_tien,
@@ -350,7 +349,7 @@ BEGIN
             tong_cuoi = @TongCuoi
         WHERE ma_hd = @MaHd;
 
-        PRINT 'Đã UPDATE hóa đơn (uncommitted). Đang đợi 10 giây...';
+        PRINT N'Đã UPDATE hóa đơn (uncommitted). Đang đợi 10 giây...';
         
         -- Delay để T2 có thời gian đọc uncommitted data
         WAITFOR DELAY '00:00:10';
@@ -358,9 +357,10 @@ BEGIN
         -- Kiểm tra xem có test rollback không
         IF @TestRollback = 1
         BEGIN
-            PRINT '⚠️ TEST ROLLBACK: Phát hiện lỗi, đang rollback transaction...';
+            PRINT N'TEST ROLLBACK: Phát hiện lỗi, đang rollback transaction...';
             ROLLBACK TRANSACTION;
-            PRINT 'ROLLBACK thành công! Dữ liệu đã quay về ban đầu.';
+            PRINT N'ROLLBACK thành công! Dữ liệu đã quay về ban đầu.';
+            RETURN;  -- Exit procedure after rollback
         END
         
         -- Đọc lại từ database SAU KHI COMMIT để trả về frontend
@@ -375,9 +375,9 @@ BEGIN
         FROM hoa_don hd
         WHERE hd.ma_hd = @MaHd;
         
-        PRINT 'Đang COMMIT transaction...';
+        PRINT N'Đang COMMIT transaction...';
         COMMIT TRANSACTION;
-        PRINT 'COMMIT thành công! Dữ liệu đã được lưu vào DB.';
+        PRINT N'COMMIT thành công! Dữ liệu đã được lưu vào DB.';
 
         
     END TRY
