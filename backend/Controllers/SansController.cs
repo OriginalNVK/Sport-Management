@@ -9,23 +9,12 @@ public class UpdateFieldStatusRequest
     public string TinhTrang { get; set; } = string.Empty;
 }
 
-public class UpdateFieldStatusRequest
-{
-    public string TinhTrang { get; set; } = string.Empty;
-}
-
 [ApiController]
 [Route("api/v1/[controller]")]
 public class SansController : ControllerBase
 {
     private readonly SportContext _context;
-    private readonly ILogger<SansController> _logger;
     
-    public SansController(SportContext context, ILogger<SansController> logger)
-    {
-        _context = context;
-        _logger = logger;
-    }
     private readonly ILogger<SansController> _logger;
     
     public SansController(SportContext context, ILogger<SansController> logger)
@@ -48,10 +37,6 @@ public class SansController : ControllerBase
                 tenSan = s.TenSan,
                 tinhTrang = s.TinhTrang,
                 maLoai = s.MaLoai,
-                tenLoai = s.MaLoaiNavigation != null ? s.MaLoaiNavigation.TenLoai : null,
-                maCoSo = s.MaCoSo,
-                tenCoSo = s.MaCoSoNavigation != null ? s.MaCoSoNavigation.TenCoSo : null,
-                sucChua = s.SucChua
                 tenLoai = s.MaLoaiNavigation != null ? s.MaLoaiNavigation.TenLoai : null,
                 maCoSo = s.MaCoSo,
                 tenCoSo = s.MaCoSoNavigation != null ? s.MaCoSoNavigation.TenCoSo : null,
