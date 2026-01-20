@@ -10,17 +10,14 @@ import { ServiceManagement } from './components/ServiceManagement';
 import { Payment } from './components/Payment';
 import { AdminPayment } from './components/AdminPayment';
 import { Profile } from './components/Profile';
-import { useEffect } from 'react';
-
-export type PageType = 'dashboard' | 'users' | 'stadiums' | 'booking' | 'services' | 'payment' | 'profile';
-export type UserRole = 'customer' | 'manager' | 'receptionist' | 'staff' | 'cashier';
 import { ShiftManagement } from './components/ShiftManagement';
 import { LeaveRequestManagement } from './components/LeaveRequestManagement';
 import { MyLeaveRequests } from './components/MyLeaveRequests';
 import { FieldStatusManagement } from './components/FieldStatusManagement';
 import { MyShifts } from './components/MyShifts';
+
 export type PageType = 'dashboard' | 'users' | 'stadiums' | 'booking' | 'services' | 'payment' | 'profile' | 'shifts' | 'leave-requests' | 'my-leave-requests' | 'field-status' | 'my-shifts';
-export type UserRole = 'customer' | 'manager' | 'receptionist' | 'staff';
+export type UserRole = 'customer' | 'manager' | 'receptionist' | 'staff' | 'cashier';
 
 export default function App() {
   // const [isAuthenticated, setIsAuthenticated] = useState(false);
@@ -48,6 +45,9 @@ export default function App() {
           role = 'receptionist';
         } else if (parsedData.vaiTro === 'nhan_vien') {
           role = 'staff';
+        }
+        else if (parsedData.vaiTro === 'thu_ngan') {
+          role = 'cashier';
         }
         
         setUserRole(role);
