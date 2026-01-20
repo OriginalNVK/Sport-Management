@@ -14,4 +14,10 @@ public interface ILeaveService
     Task<int> CreateLeaveRequestAsync(CreateLeaveRequest request);
     Task<bool> ApproveLeaveRequestAsync(int maDon, ApproveLeaveRequest request);
     Task<bool> DeleteLeaveRequestAsync(int maDon);
+    
+    // Phantom Read Demo Methods
+    Task<PhantomReadDemoResult> GetLeaveRequestsWithPhantomReadAsync();
+    Task<PhantomReadDemoResult> GetLeaveRequestsFixedPhantomReadAsync();
+    Task<int> CreateLeaveRequestNormalAsync(CreateLeaveRequest request);
+    Task<int> CreateLeaveRequestWillBeBlockedAsync(CreateLeaveRequest request);
 }

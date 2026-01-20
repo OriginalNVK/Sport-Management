@@ -14,6 +14,7 @@ public class UpdateFieldStatusRequest
 public class SansController : ControllerBase
 {
     private readonly SportContext _context;
+    
     private readonly ILogger<SansController> _logger;
     
     public SansController(SportContext context, ILogger<SansController> logger)
@@ -27,6 +28,8 @@ public class SansController : ControllerBase
     {
         var data = await _context.Sans
             .AsNoTracking()
+            .Include(s => s.MaLoaiNavigation)
+            .Include(s => s.MaCoSoNavigation)
             .Include(s => s.MaLoaiNavigation)
             .Include(s => s.MaCoSoNavigation)
             .Select(s => new {

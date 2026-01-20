@@ -1,5 +1,6 @@
 using backend.Data;
 using backend.DTOs;
+using Microsoft.Data.SqlClient;
 using Microsoft.EntityFrameworkCore;
 
 namespace backend.Services;
@@ -218,37 +219,16 @@ public class BookingService : IBookingService
 
     public async Task<List<UserBookingDto>> GetMyBookingsAsync(int? maKh, int? maNv)
     {
-        var query = _context.PhieuDatSans
-            .Include(p => p.MaSanNavigation)
-                .ThenInclude(s => s!.MaLoaiNavigation)
-            .Include(p => p.HoaDons)
-            .AsQueryable();
+        // Sử dụng stored procedure sp_GetMyBookings
+        var maKhParam = new SqlParameter("@MaKh", maKh.HasValue ? (object)maKh.Value : DBNull.Value);
+        var maNvParam = new SqlParameter("@MaNv", maNv.HasValue ? (object)maNv.Value : DBNull.Value);
 
-        // Filter by user type
-        if (maKh.HasValue)
-        {
-            query = query.Where(p => p.MaKh == maKh.Value);
-        }
-        else if (maNv.HasValue)
-        {
-            query = query.Where(p => p.NguoiTaoPhieu != null);
-        }
-
-        var bookings = await query
-            .OrderByDescending(p => p.NgayTaoPhieu)
-            .Select(p => new
-            {
-                p.MaPhieu,
-                p.NgayDat,
-                p.GioBatDau,
-                p.GioKetThuc,
-                p.TrangThai,
-                p.TongTien,
-                p.TinhTrangTt,
-                MaLoai = p.MaSanNavigation!.MaLoai,
-                TenSan = p.MaSanNavigation!.TenSan,
-                MaHoaDon = p.HoaDons.FirstOrDefault() != null ? p.HoaDons.FirstOrDefault()!.MaHd : (int?)null
-            })
+        var bookings = await _context.Database
+            .SqlQueryRaw<BookingResultFromSP>(
+                "EXEC sp_GetMyBookingsUnPaid @MaKh, @MaNv",
+                maKhParam,
+                maNvParam
+            )
             .ToListAsync();
 
         var result = bookings.Select(b =>
@@ -276,7 +256,54 @@ public class BookingService : IBookingService
                 GioKetThuc = b.GioKetThuc,
                 TrangThai = b.TrangThai,
                 TongTien = b.TongTien,
-                TinhTrangTt = b.TinhTrangTt
+                TinhTrangTt = b.TinhTrangTt,
+                DanhSachDichVu = b.DanhSachDichVu
+            };
+        }).ToList();
+
+        return result;
+    }
+
+    public async Task<List<UserBookingDto>> GetAllBookingsAsync(string? tinhTrangTt = null)
+    {
+        // Sử dụng stored procedure sp_GetAllBookings
+        var tinhTrangParam = new SqlParameter("@TinhTrangTt",
+            string.IsNullOrEmpty(tinhTrangTt) ? (object)DBNull.Value : tinhTrangTt);
+
+        var bookings = await _context.Database
+            .SqlQueryRaw<BookingResultFromSP>(
+                "EXEC sp_GetAllBookings @TinhTrangTt",
+                tinhTrangParam
+            )
+            .ToListAsync();
+
+        var result = bookings.Select(b =>
+        {
+            var loaiSan = b.TenLoai ?? (b.MaLoai switch
+            {
+                1 => "Badminton",
+                2 => "Basketball",
+                3 => "Tennis",
+                4 => "Football",
+                _ => "Unknown"
+            });
+
+            var displayText = b.MaHoaDon.HasValue
+                ? $"Booking #{b.MaHoaDon} - {loaiSan} sân {b.TenSan}"
+                : $"Booking #{b.MaPhieu} - {loaiSan} sân {b.TenSan}";
+
+            return new UserBookingDto
+            {
+                MaPhieu = b.MaPhieu,
+                MaHoaDon = b.MaHoaDon,
+                DisplayText = displayText,
+                NgayDat = b.NgayDat,
+                GioBatDau = b.GioBatDau,
+                GioKetThuc = b.GioKetThuc,
+                TrangThai = b.TrangThai,
+                TongTien = b.TongTien,
+                TinhTrangTt = b.TinhTrangTt,
+                DanhSachDichVu = b.DanhSachDichVu
             };
         }).ToList();
 
@@ -436,4 +463,22 @@ public class BookingService : IBookingService
 
         return nextMaPhieu;
     }
+}
+
+// DTO để nhận kết quả từ stored procedure
+internal class BookingResultFromSP
+{
+    public int MaPhieu { get; set; }
+    public DateOnly? NgayDat { get; set; }
+    public TimeOnly? GioBatDau { get; set; }
+    public TimeOnly? GioKetThuc { get; set; }
+    public string? TrangThai { get; set; }
+    public decimal? TongTien { get; set; }
+    public string? TinhTrangTt { get; set; }
+    public int? MaHoaDon { get; set; }
+    public int? MaLoai { get; set; }
+    public string? TenLoai { get; set; }
+    public string? TenSan { get; set; }
+    public string? TenKhachHang { get; set; }
+    public string? DanhSachDichVu { get; set; }
 }

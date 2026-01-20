@@ -9,10 +9,10 @@ public interface IBookingService
     Task<List<BookingResponse>> GetBookingsByCustomerAsync(int maKh);
     Task<bool> CancelBookingAsync(int maPhieu, string? nguoiHuy);
     Task<List<UserBookingDto>> GetMyBookingsAsync(int? maKh, int? maNv);
+    Task<List<UserBookingDto>> GetAllBookingsAsync(string? tinhTrangTt = null);
     Task<ReceptionistCreatedResponse> GetReceptionistCreatedAsync(int maNv);
 
-		Task<(Guid holdToken, DateTime expiresAt)> HoldSanAsync(HoldSanRequest req);
-Task ReleaseHoldAsync(Guid holdToken);
-Task<int> ConfirmBookingAsync(ConfirmBookingRequest req);
-
+	Task<(Guid holdToken, DateTime expiresAt)> HoldSanAsync(HoldSanRequest req);
+    Task ReleaseHoldAsync(Guid holdToken);
+    Task<int> ConfirmBookingAsync(ConfirmBookingRequest req);
 }

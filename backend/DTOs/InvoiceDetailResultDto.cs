@@ -1,11 +1,8 @@
+
 using System.ComponentModel.DataAnnotations.Schema;
 
 namespace backend.DTOs;
-
-/// <summary>
-/// DTO để nhận kết quả từ stored procedure sp_TaoHoaDon
-/// </summary>
-public class InvoiceResultDto
+public class InvoiceDetailResultDto
 {
     [Column("ma_hd")]
     public int MaHd { get; set; }
@@ -28,9 +25,12 @@ public class InvoiceResultDto
     [Column("tong_cuoi")]
     public decimal TongCuoi { get; set; }
 
-    [Column("ten_khach_hang")]
-    public string TenKhachHang { get; set; } = string.Empty;
+    [Column("tinh_trang_tt")]
+    public string? TinhTrangTt { get; set; }
 
-    [Column("hang_thanh_vien")]
-    public string? HangThanhVien { get; set; }
+    [Column("ten_khach_hang")]
+    public string? TenKhachHang { get; set; }
+
+    [Column("ten_san")]
+    public string? TenSan { get; set; }
 }
