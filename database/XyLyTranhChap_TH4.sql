@@ -36,13 +36,10 @@ BEGIN
     DECLARE @Token UNIQUEIDENTIFIER = NEWID();
 
     BEGIN TRY
-        -- Dùng READ COMMITTED để tránh khóa toàn bảng gây Timeout
         BEGIN TRAN;
 
-        -- Bước 1: Dọn dẹp các bản ghi đã hết hạn để giải phóng bộ nhớ
         DELETE FROM dbo.san_hold WHERE ExpiresAt <= @Now;
 
-        -- Bước 2: Kiểm tra lịch thực tế (lich_dat_san)
         IF EXISTS (
             SELECT 1 FROM dbo.lich_dat_san WITH (NOLOCK)
             WHERE ma_san = @MaSan AND ngay = @NgayDat
@@ -54,8 +51,6 @@ BEGIN
             RETURN;
         END
 
-        -- Bước 3: Kiểm tra các lượt đang giữ chỗ (san_hold)
-        -- Sử dụng UPDLOCK, HOLDLOCK để đảm bảo không ai insert đè vào cùng lúc
         IF EXISTS (
             SELECT 1 FROM dbo.san_hold WITH (UPDLOCK, HOLDLOCK)
             WHERE MaSan = @MaSan AND NgayDat = @NgayDat
@@ -68,7 +63,6 @@ BEGIN
             RETURN;
         END
 
-        -- Bước 4: Insert lượt giữ chỗ mới
         INSERT INTO dbo.san_hold(HoldToken, MaSan, NgayDat, GioBatDau, GioKetThuc, Owner, ExpiresAt)
         VALUES (@Token, @MaSan, @NgayDat, @GioBatDau, @GioKetThuc, @Owner, @Expires);
 
@@ -103,7 +97,6 @@ AS
 BEGIN
   SET NOCOUNT ON;
 
-  -- CHẶN UPDATE nếu sân đang bị hold
   IF EXISTS (
       SELECT 1
       FROM dbo.san_hold
