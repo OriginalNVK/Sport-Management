@@ -10,18 +10,16 @@ import { ServiceManagement } from './components/ServiceManagement';
 import { Payment } from './components/Payment';
 import { AdminPayment } from './components/AdminPayment';
 import { Profile } from './components/Profile';
+export type PageType = 'dashboard' | 'users' | 'stadiums' | 'booking' | 'services' | 'payment' | 'profile' | 'shifts' | 'leave-requests' | 'my-leave-requests' | 'field-status' | 'my-shifts';
+export type UserRole = 'customer' | 'manager' | 'receptionist' | 'staff' | 'cashier';
 import { ShiftManagement } from './components/ShiftManagement';
 import { LeaveRequestManagement } from './components/LeaveRequestManagement';
 import { MyLeaveRequests } from './components/MyLeaveRequests';
 import { FieldStatusManagement } from './components/FieldStatusManagement';
 import { MyShifts } from './components/MyShifts';
-
-export type PageType = 'dashboard' | 'users' | 'stadiums' | 'booking' | 'services' | 'payment' | 'profile' | 'shifts' | 'leave-requests' | 'my-leave-requests' | 'field-status' | 'my-shifts';
-export type UserRole = 'customer' | 'manager' | 'receptionist' | 'staff' | 'cashier';
-
 export default function App() {
-  // const [isAuthenticated, setIsAuthenticated] = useState(false);
-  const [isAuthenticated, setIsAuthenticated] = useState(true);
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
+  //const [isAuthenticated, setIsAuthenticated] = useState(true);
   const [showRegister, setShowRegister] = useState(false);
   const [userEmail, setUserEmail] = useState('');
   const [userRole, setUserRole] = useState<UserRole>('customer');
