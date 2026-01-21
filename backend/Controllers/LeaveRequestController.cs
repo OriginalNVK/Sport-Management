@@ -261,28 +261,28 @@ public class LeaveRequestController : ControllerBase
     /// [DEMO] Tạo đơn nghỉ phép (không bị block) - Dùng cho demo phantom read
     /// Nhân viên gọi API này trong khi quản lý đang đọc danh sách
     /// </summary>
-    [HttpPost("normal")]
-    [ProducesResponseType(typeof(object), StatusCodes.Status201Created)]
-    public async Task<IActionResult> CreateLeaveRequestNormal([FromBody] CreateLeaveRequest request)
-    {
-        try
-        {
-            if (!ModelState.IsValid)
-                return BadRequest(ModelState);
+    //[HttpPost("normal")]
+    //[ProducesResponseType(typeof(object), StatusCodes.Status201Created)]
+    //public async Task<IActionResult> CreateLeaveRequestNormal([FromBody] CreateLeaveRequest request)
+    //{
+    //    try
+    //    {
+    //        if (!ModelState.IsValid)
+    //            return BadRequest(ModelState);
 
-            _logger.LogInformation($"Creating leave request (NORMAL) for employee {request.MaNv}...");
-            var maDon = await _leaveService.CreateLeaveRequestNormalAsync(request);
-            _logger.LogInformation($"Leave request created successfully with ID: {maDon}");
+    //        _logger.LogInformation($"Creating leave request (NORMAL) for employee {request.MaNv}...");
+    //        var maDon = await _leaveService.CreateLeaveRequestNormalAsync(request);
+    //        _logger.LogInformation($"Leave request created successfully with ID: {maDon}");
             
-            return CreatedAtAction(nameof(GetLeaveRequestById), new { maDon }, 
-                new { message = "Tạo đơn nghỉ phép thành công (NORMAL - không bị block)", maDon });
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError($"Error creating leave request (normal): {ex.Message}");
-            return StatusCode(500, new { message = ex.Message });
-        }
-    }
+    //        return CreatedAtAction(nameof(GetLeaveRequestById), new { maDon }, 
+    //            new { message = "Tạo đơn nghỉ phép thành công (NORMAL - không bị block)", maDon });
+    //    }
+    //    catch (Exception ex)
+    //    {
+    //        _logger.LogError($"Error creating leave request (normal): {ex.Message}");
+    //        return StatusCode(500, new { message = ex.Message });
+    //    }
+    //}
 
     /// <summary>
     /// [DEMO] Tạo đơn nghỉ phép (sẽ bị block) - Dùng cho demo fixed phantom read
