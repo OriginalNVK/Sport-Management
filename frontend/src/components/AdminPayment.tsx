@@ -562,7 +562,7 @@ export function AdminPayment() {
                   className="w-4 h-4 text-red-600 rounded"
                 />
                 <label htmlFor="testRollback" className="text-sm font-medium text-red-700 cursor-pointer flex-1">
-                  ⚠️ Demo Rollback (Dirty Read Test)
+                  Rollback (Dirty Read Demo)
                 </label>
                 <p className="text-xs text-red-600">
                   If checked, transaction will rollback after 10s

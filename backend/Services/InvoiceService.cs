@@ -112,7 +112,7 @@ public class InvoiceService : IInvoiceService
     {
 
         // Read uncommitted
-        await _context.Database.BeginTransactionAsync(System.Data.IsolationLevel.ReadCommitted);
+        await _context.Database.BeginTransactionAsync(System.Data.IsolationLevel.ReadUncommitted);
 
         var query = _context.HoaDons.AsQueryable();
 
