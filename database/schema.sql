@@ -164,7 +164,7 @@ CREATE TABLE lich_dat_san (
 
 -- Table: chi_tiet_dv
 CREATE TABLE chi_tiet_dv (
-    ma_ct INT PRIMARY KEY,
+    ma_ct INT IDENTITY(1,1) PRIMARY KEY,
     ma_phieu INT FOREIGN KEY REFERENCES phieu_dat_san(ma_phieu),
     ma_dv INT FOREIGN KEY REFERENCES dich_vu(ma_dv),
     so_luong INT,

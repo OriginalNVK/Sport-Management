@@ -208,9 +208,6 @@ public partial class SportContext : DbContext
 
             entity.ToTable("chi_tiet_dv");
 
-            entity.Property(e => e.MaCt)
-                .ValueGeneratedNever()
-                .HasColumnName("ma_ct");
             entity.Property(e => e.DonGia)
                 .HasColumnType("decimal(18, 2)")
                 .HasColumnName("don_gia");

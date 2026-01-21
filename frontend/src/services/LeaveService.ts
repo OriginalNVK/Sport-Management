@@ -54,25 +54,23 @@ class LeaveService {
 
   async getAllLeaveRequests(): Promise<LeaveRequestDto[]> {
     try {
-      // ========== MODE 1: NORMAL - Bình thường ==========
-      // const response = await axios.get<LeaveRequestDto[]>(
-      //   `${API_BASE_URL}/leave-requests`,
-      //   this.getConfig()
-      // );
-      // return response.data;
-      
-      // ========== MODE 2: DEMO FIXED - Đã fix phantom read ==========
-      // Uncomment để demo: Quản lý dùng SERIALIZABLE lock
-      // Khi quản lý đang đọc danh sách, nhân viên gửi đơn mới sẽ bị block (chờ)
-      // Trả về lần đọc 2 (không có phantom read do đã lock)
-
+      // ========== MODE 1: NORMAL ==========
       const response = await axios.get<PhantomReadDemoResult>(
-        `${API_BASE_URL}/leave-requests/fixed-phantom-demo`,
+        `${API_BASE_URL}/leave-requests/phantom-demo`,
         this.getConfig()
       );
-      console.log('Fixed Phantom Read Demo Response:', response.data);
-      console.log('lanDoc2:', response.data.lanDoc2);
       return response.data.lanDoc2 || [];
+      
+      // ========== MODE 2: DEMO FIXED ==========
+      // Quản lý dùng SERIALIZABLE lock. Khi quản lý đang đọc danh sách, nhân viên gửi đơn mới sẽ bị block
+
+      // const response = await axios.get<PhantomReadDemoResult>(
+      //   `${API_BASE_URL}/leave-requests/fixed-phantom-demo`,
+      //   this.getConfig()
+      // );
+      // console.log('Fixed Phantom Read Demo Response:', response.data);
+      // console.log('lanDoc2:', response.data.lanDoc2);
+      // return response.data.lanDoc2 || [];
 
     } catch (error) {
       if (axios.isAxiosError(error)) {
@@ -133,23 +131,13 @@ class LeaveService {
 
   async createLeaveRequest(request: CreateLeaveRequest): Promise<{ message: string; maDon: number }> {
     try {
-      // ========== MODE 1: NORMAL ==========
-      // const response = await axios.post<{ message: string; maDon: number }>(
-      //   `${API_BASE_URL}/leave-requests`,
-      //   request,
-      //   this.getConfig()
-      // );
-      // return response.data;
-      
-      // ========== MODE 2:  BLOCK - Nhân viên bị chờ khi quản lý đang duyệt  ==========
-      
-      console.log(' [MODE 2] Nhân viên gửi đơn - sẽ bị chờ nếu quản lý đang đọc...');
+
       const response = await axios.post<{ message: string; maDon: number }>(
         `${API_BASE_URL}/leave-requests/will-block`,
         request,
         this.getConfig()
       );
-      console.log(' [MODE 2] Nhân viên gửi đơn thành công!');
+      console.log(' Nhân viên gửi đơn thành công!');
       return response.data;
 
     } catch (error) {

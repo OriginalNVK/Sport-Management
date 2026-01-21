@@ -236,16 +236,14 @@ public class LeaveService : ILeaveService
         }
     }
 
-    // =============================================
     // PHANTOM READ DEMO METHODS
-    // =============================================
 
     public async Task<PhantomReadDemoResult> GetLeaveRequestsWithPhantomReadAsync()
     {
         var result = new PhantomReadDemoResult
         {
             StartTime = DateTime.Now,
-            Message = "Demo Phantom Read (CÓ LỖI) - Đọc 2 lần với delay 5 giây"
+            Message = "Demo Phantom Read (CÓ LỖI) - Đọc 2 lần với delay 10 giây"
         };
 
         try
@@ -300,11 +298,11 @@ public class LeaveService : ILeaveService
             
             if (result.HasPhantomRead)
             {
-                result.Message += $" | ⚠️ PHANTOM READ DETECTED: Lần 1 có {result.LanDoc1.Count} đơn, lần 2 có {result.LanDoc2.Count} đơn";
+                result.Message += $" | PHANTOM READ DETECTED: Lần 1 có {result.LanDoc1.Count} đơn, lần 2 có {result.LanDoc2.Count} đơn";
             }
             else
             {
-                result.Message += $" | ✓ Không phát hiện phantom read (cả 2 lần đều có {result.LanDoc1.Count} đơn)";
+                result.Message += $" | Không phát hiện phantom read (cả 2 lần đều có {result.LanDoc1.Count} đơn)";
             }
 
             return result;
@@ -374,7 +372,7 @@ public class LeaveService : ILeaveService
             result.EndTime = DateTime.Now;
             result.HasPhantomRead = result.LanDoc2.Count > result.LanDoc1.Count;
             
-            result.Message += $" | ✓ ĐÃ FIX: Lần 1 có {result.LanDoc1.Count} đơn, lần 2 có {result.LanDoc2.Count} đơn (không thay đổi)";
+            result.Message += $" | ĐÃ FIX: Lần 1 có {result.LanDoc1.Count} đơn, lần 2 có {result.LanDoc2.Count} đơn (không thay đổi)";
 
             return result;
         }
@@ -385,52 +383,52 @@ public class LeaveService : ILeaveService
         }
     }
 
-    public async Task<int> CreateLeaveRequestNormalAsync(CreateLeaveRequest request)
-    {
-        try
-        {
-            using (var connection = _context.Database.GetDbConnection())
-            {
-                await connection.OpenAsync();
-                using (var command = connection.CreateCommand())
-                {
-                    command.CommandText = "sp_CreateLeaveRequest_Normal";
-                    command.CommandType = System.Data.CommandType.StoredProcedure;
+    //public async Task<int> CreateLeaveRequestNormalAsync(CreateLeaveRequest request)
+    //{
+    //    try
+    //    {
+    //        using (var connection = _context.Database.GetDbConnection())
+    //        {
+    //            await connection.OpenAsync();
+    //            using (var command = connection.CreateCommand())
+    //            {
+    //                command.CommandText = "sp_CreateLeaveRequest_Normal";
+    //                command.CommandType = System.Data.CommandType.StoredProcedure;
 
-                    // Add parameters
-                    var paramMaNv = command.CreateParameter();
-                    paramMaNv.ParameterName = "@MaNv";
-                    paramMaNv.Value = request.MaNv;
-                    command.Parameters.Add(paramMaNv);
+    //                // Add parameters
+    //                var paramMaNv = command.CreateParameter();
+    //                paramMaNv.ParameterName = "@MaNv";
+    //                paramMaNv.Value = request.MaNv;
+    //                command.Parameters.Add(paramMaNv);
 
-                    var paramNgayNghi = command.CreateParameter();
-                    paramNgayNghi.ParameterName = "@NgayNghi";
-                    paramNgayNghi.Value = request.NgayNghi.Date;
-                    command.Parameters.Add(paramNgayNghi);
+    //                var paramNgayNghi = command.CreateParameter();
+    //                paramNgayNghi.ParameterName = "@NgayNghi";
+    //                paramNgayNghi.Value = request.NgayNghi.Date;
+    //                command.Parameters.Add(paramNgayNghi);
 
-                    var paramLyDo = command.CreateParameter();
-                    paramLyDo.ParameterName = "@LyDo";
-                    paramLyDo.Value = request.LyDo;
-                    command.Parameters.Add(paramLyDo);
+    //                var paramLyDo = command.CreateParameter();
+    //                paramLyDo.ParameterName = "@LyDo";
+    //                paramLyDo.Value = request.LyDo;
+    //                command.Parameters.Add(paramLyDo);
 
-                    var paramOutput = command.CreateParameter();
-                    paramOutput.ParameterName = "@MaDonOutput";
-                    paramOutput.Direction = System.Data.ParameterDirection.Output;
-                    paramOutput.DbType = System.Data.DbType.Int32;
-                    command.Parameters.Add(paramOutput);
+    //                var paramOutput = command.CreateParameter();
+    //                paramOutput.ParameterName = "@MaDonOutput";
+    //                paramOutput.Direction = System.Data.ParameterDirection.Output;
+    //                paramOutput.DbType = System.Data.DbType.Int32;
+    //                command.Parameters.Add(paramOutput);
 
-                    await command.ExecuteNonQueryAsync();
+    //                await command.ExecuteNonQueryAsync();
 
-                    return (int)paramOutput.Value;
-                }
-            }
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError($"Error in CreateLeaveRequestNormalAsync: {ex.Message}");
-            throw;
-        }
-    }
+    //                return (int)paramOutput.Value;
+    //            }
+    //        }
+    //    }
+    //    catch (Exception ex)
+    //    {
+    //        _logger.LogError($"Error in CreateLeaveRequestNormalAsync: {ex.Message}");
+    //        throw;
+    //    }
+    //}
 
     public async Task<int> CreateLeaveRequestWillBeBlockedAsync(CreateLeaveRequest request)
     {
@@ -441,9 +439,9 @@ public class LeaveService : ILeaveService
                 await connection.OpenAsync();
                 using (var command = connection.CreateCommand())
                 {
-                    command.CommandText = "sp_CreateLeaveRequest_WillBeBlocked";
+                    command.CommandText = "sp_CreateLeaveRequest";
                     command.CommandType = System.Data.CommandType.StoredProcedure;
-                    command.CommandTimeout = 30; // Timeout 30 giây để chờ lock
+                    command.CommandTimeout = 30; 
 
                     // Add parameters
                     var paramMaNv = command.CreateParameter();
