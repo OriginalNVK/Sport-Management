@@ -286,7 +286,7 @@ BEGIN
     SET NOCOUNT ON;
     
     -- Comment dòng này để demo dirty read
-    -- SET TRANSACTION ISOLATION LEVEL READ COMMITTED;
+    SET TRANSACTION ISOLATION LEVEL READ UNCOMMITTED;
     
     BEGIN TRY
         BEGIN TRANSACTION;
@@ -298,6 +298,7 @@ BEGIN
         DECLARE @TongCuoi DECIMAL(18,2);
         
         -- Đọc thông tin hóa đơn hiện tại
+        -- Comment UPDLOCK để T2 có thể đọc uncommitted data
         SELECT 
             @MaPhieu = hd.ma_phieu,
             @TongTienGoc = hd.tong_tien,
@@ -349,7 +350,7 @@ BEGIN
             tong_cuoi = @TongCuoi
         WHERE ma_hd = @MaHd;
 
-        PRINT N'Đã UPDATE hóa đơn (uncommitted). Đang đợi 10 giây...';
+        PRINT 'Đã UPDATE hóa đơn (uncommitted). Đang đợi 10 giây...';
         
         -- Delay để T2 có thời gian đọc uncommitted data
         WAITFOR DELAY '00:00:10';
@@ -357,27 +358,36 @@ BEGIN
         -- Kiểm tra xem có test rollback không
         IF @TestRollback = 1
         BEGIN
-            PRINT N'TEST ROLLBACK: Phát hiện lỗi, đang rollback transaction...';
+            PRINT 'ROLLBACK: Phát hiện lỗi, đang rollback transaction...';
             ROLLBACK TRANSACTION;
-            PRINT N'ROLLBACK thành công! Dữ liệu đã quay về ban đầu.';
-            RETURN;  -- Exit procedure after rollback
+            PRINT 'ROLLBACK thành công! Dữ liệu đã quay về ban đầu.';
+		SELECT 
+            ma_hd,
+            ma_phieu,
+            tong_tien,
+            giam_gia,
+            thue,
+            tong_cuoi
+        FROM hoa_don
+        WHERE ma_hd = @MaHd;
+			RETURN
         END
         
         -- Đọc lại từ database SAU KHI COMMIT để trả về frontend
         -- Chỉ trả về response khi commit thành công
         SELECT 
-            hd.ma_hd,
-            hd.ma_phieu,
-            hd.tong_tien,
-            hd.giam_gia,
-            hd.thue,
-            hd.tong_cuoi
-        FROM hoa_don hd
-        WHERE hd.ma_hd = @MaHd;
+            ma_hd,
+            ma_phieu,
+            tong_tien,
+            giam_gia,
+            thue,
+            tong_cuoi
+        FROM hoa_don
+        WHERE ma_hd = @MaHd;
         
-        PRINT N'Đang COMMIT transaction...';
+        PRINT 'Đang COMMIT transaction...';
         COMMIT TRANSACTION;
-        PRINT N'COMMIT thành công! Dữ liệu đã được lưu vào DB.';
+        PRINT 'COMMIT thành công! Dữ liệu đã được lưu vào DB.';
 
         
     END TRY
@@ -392,7 +402,7 @@ BEGIN
         RAISERROR(@ErrorMessage, @ErrorSeverity, @ErrorState);
     END CATCH
 END
-GO
+GO;
 
 -- =====================================================
 -- Stored procedure đọc hóa đơn với REPEATABLE READ
