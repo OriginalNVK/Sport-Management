@@ -23,7 +23,15 @@ export default function App() {
   const [showRegister, setShowRegister] = useState(false);
   const [userEmail, setUserEmail] = useState('');
   const [userRole, setUserRole] = useState<UserRole>('customer');
-  const [currentPage, setCurrentPage] = useState<PageType>('dashboard');
+  // const [currentPage, setCurrentPage] = useState<PageType>('dashboard');
+  const [currentPage, setCurrentPage] = useState<PageType>(() => {
+    const savedPage = localStorage.getItem('currentPage');
+    return (savedPage as PageType) || 'dashboard';
+  });
+  
+  useEffect(() => {
+    localStorage.setItem('currentPage', currentPage);
+  }, [currentPage]);
 
   // Khôi phục trạng thái đăng nhập khi reload
   useEffect(() => {
@@ -86,6 +94,7 @@ export default function App() {
     localStorage.removeItem('vaiTro');
     localStorage.removeItem('maKh');
     localStorage.removeItem('maNv');
+    localStorage.removeItem('currentPage');
     
     setIsAuthenticated(false);
     setShowRegister(false);

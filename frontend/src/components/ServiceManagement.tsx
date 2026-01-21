@@ -244,7 +244,7 @@ const selectedItems = useMemo(() => {
       {bookings.length === 0 && <option value="">(Chưa có phiếu đặt sân)</option>}
       {bookings.map((inv) => (
         <option key={inv.maPhieu} value={inv.maPhieu}>
-          # - Phiếu {inv.maPhieu} - Sân {inv.maSan} - Ngày {inv.ngayDat} - Giờ bắt đầu: {inv.gioBatDau} - Giờ kết thúc: {inv.gioKetThuc} - Trạng thái: {inv.tinhTrangTt === 'chua_tt' ? 'Chưa thanh toán' : inv.tinhTrangTt === 'da_tt' ? 'Đã thanh toán' : 'Hoàn tiền'}
+          # - Phiếu {inv.maPhieu} - Cơ sở: {inv.maSan} - Ngày {inv.ngayDat} - Giờ bắt đầu: {inv.gioBatDau} - Giờ kết thúc: {inv.gioKetThuc} - Trạng thái: {inv.tinhTrangTt === 'chua_tt' ? 'Chưa thanh toán' : inv.tinhTrangTt === 'da_tt' ? 'Đã thanh toán' : 'Hoàn tiền'}
         </option>
       ))}
     </select>

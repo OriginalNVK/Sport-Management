@@ -88,7 +88,7 @@ INSERT INTO ton_kho_dich_vu (ma_dv, ma_co_so, so_luong_ton, ngay_cap_nhat)
 VALUES
 (1, 1, 50, GETDATE()),
 (2, 1, 30, GETDATE()),
-(3, 1, 100, GETDATE());
+(3, 4, 100, GETDATE());
 
 
 INSERT INTO huan_luyen_vien (ho_ten, chuyen_mon, gia_theo_gio, sdt)
@@ -99,21 +99,24 @@ VALUES
 
 INSERT INTO phieu_dat_san (ma_phieu, ma_kh, ma_san, nguoi_tao_phieu,ngay_tao_phieu, ngay_dat, gio_bat_dau, gio_ket_thuc, hinh_thuc, trang_thai, tong_tien, tinh_trang_tt)
 VALUES
-(1, 1, 1, 'letan1', GETDATE(),'2025-12-20', '08:00', '10:00', 'truc_tiep', 'da_xac_nhan', 160000, 'da_tt'),
-(2, 2, 2, 'kh2', GETDATE(),'2025-12-21', '14:00', '16:00', 'online', 'cho_xac_nhan', 200000, 'chua_tt');
+(1, 1, 1, 'letan1', GETDATE(),'2025-12-31', '08:00', '10:00', 'truc_tiep', 'da_xac_nhan', 160000, 'da_tt'),
+(2, 2, 2, 'kh2', GETDATE(),'2025-12-31', '14:00', '16:00', 'online', 'cho_xac_nhan', 200000, 'chua_tt');
 
 INSERT INTO lich_dat_san (ma_san, ma_phieu, ngay, gio_bat_dau, gio_ket_thuc)
 VALUES
-(1, 1, '2025-12-20', '08:00', '09:00'),
-(1, 1, '2025-12-20', '09:00', '10:00'),
-(2, 2, '2025-12-21', '14:00', '15:00'),
-(2, 2, '2025-12-21', '15:00', '16:00');
+(1, 1, '2025-01-31', '08:00', '09:00'),
+(1, 1, '2025-01-31', '09:00', '10:00'),
+(2, 2, '2025-01-31', '14:00', '15:00'),
+(2, 2, '2025-01-31', '15:00', '16:00');
 
 
 INSERT INTO chi_tiet_dv (ma_ct, ma_phieu, ma_dv, so_luong, don_gia, thanh_tien)
 VALUES
 (1, 1, 1, 2, 20000, 40000),
-(2, 1, 3, 1, 10000, 10000);
+(2, 1, 3, 1, 10000, 10000),
+(3, 2, 1, 2, 20000, 40000),
+(4, 2, 2, 1, 15000, 15000),
+(5, 1, 2, 1, 15000, 15000);
 
 
 INSERT INTO hoa_don (ma_hd, ma_phieu, ngay_lap, tong_tien, thue, giam_gia, tong_cuoi)
