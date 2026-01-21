@@ -111,7 +111,7 @@ GO
 
 -- 3. Procedure THÊM đơn nghỉ phép 
 
-CREATE OR ALTER PROCEDURE sp_CreateLeaveRequest
+CREATE OR ALTER PROCEDURE sp_CreateLeaveRequest1
     @MaNv INT,
     @NgayNghi DATE,
     @LyDo NVARCHAR(1000),

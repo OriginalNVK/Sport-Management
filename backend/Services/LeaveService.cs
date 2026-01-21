@@ -439,7 +439,7 @@ public class LeaveService : ILeaveService
                 await connection.OpenAsync();
                 using (var command = connection.CreateCommand())
                 {
-                    command.CommandText = "sp_CreateLeaveRequest";
+                    command.CommandText = "sp_CreateLeaveRequest1";
                     command.CommandType = System.Data.CommandType.StoredProcedure;
                     command.CommandTimeout = 30; 
 
